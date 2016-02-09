@@ -18,13 +18,19 @@ struct DCCFile
     unsigned long size;
     unsigned long received;
     std::ofstream stream;
+    float old_percent;
 
     DCCFile(irc_dcc_t id, const char *filename, unsigned long size) 
         :   id(id),
             filename(filename),
             size(size),
-            received(0)
-    { stream.open(filename, std::fstream::binary); }
+            received(0),
+            old_percent(0.0f)
+    {
+        boost::filesystem::path p("downloads");
+        p /= filename;
+        stream.open(p.string(), std::fstream::binary);
+    }
 };
 
 typedef std::shared_ptr<DCCFile> DCCFilePtr;
@@ -81,9 +87,14 @@ void dcc_file_recv_callback (irc_session_t* session, irc_dcc_t id, int status, v
         fileptr->received += length;
         float percent = ((float)fileptr->received / (float)fileptr->size) * 100.0f;
 
-        std::cout << "File '" << fileptr->filename << "': "
-              << std::setprecision(4) << percent << "%"
-              << " (" << fileptr->received << "/" << fileptr->size << ")" << std::endl;
+        if (percent - fileptr->old_percent > 5.0f)
+        {
+            std::cout << "File '" << fileptr->filename << "': "
+                  << std::setprecision(4) << percent << "%"
+                  << " (" << fileptr->received << "/" << fileptr->size << ")" << std::endl;
+
+            fileptr->old_percent = percent;
+        }
 
         fileptr->stream.write(data, length);
     }
@@ -92,7 +103,6 @@ void dcc_file_recv_callback (irc_session_t* session, irc_dcc_t id, int status, v
 void event_dcc_send_req(irc_session_t* session, const char* nick, const char* addr, const char* filename, unsigned long size, irc_dcc_t dccid)
 {
     IRCContext* ctx = (IRCContext*) irc_get_ctx(session);
-    boost::filesystem::path p(filename);
     DCCFilePtr fileptr = std::make_shared<DCCFile>(dccid, filename, size);
 
     ctx->files[dccid] = fileptr;
@@ -132,6 +142,7 @@ int main(int argc, char **argv)
     }
 
     ctx.nick = argv[2];
+
     unsigned int channel = 3;
 
     while (channel < argc)
