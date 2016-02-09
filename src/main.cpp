@@ -20,10 +20,10 @@ struct DCCFile
     std::ofstream stream;
 
     DCCFile(irc_dcc_t id, const char *filename, unsigned long size) 
-	:   id(id),
-	    filename(filename),
-	    size(size),
-	    received(0)
+        :   id(id),
+            filename(filename),
+            size(size),
+            received(0)
     { stream.open(filename, std::fstream::binary); }
 };
 
@@ -33,8 +33,7 @@ struct IRCContext
 {
     std::vector<std::string> channels;
     std::string nick;
-    std::map<irc_dcc_t, std::shared_ptr<DCCFile>> files;
-
+    std::map<irc_dcc_t, DCCFilePtr> files;
 };
 
 void event_connect(irc_session_t* session, const char* event, const char* origin, const char** params, unsigned int count)
@@ -52,12 +51,12 @@ void event_channel(irc_session_t* session, const char* event, const char* origin
     char nickbuf[128];
 
     if ( count != 2 )
-    return;
+        return;
 
     std::cout << origin << "@" << params[0] << ": " << params[1] << std::endl;
 
     if ( !origin )
-    return;
+        return;
 }
 
 void dcc_file_recv_callback (irc_session_t* session, irc_dcc_t id, int status, void* fp, const char* data, unsigned int length)
@@ -67,30 +66,31 @@ void dcc_file_recv_callback (irc_session_t* session, irc_dcc_t id, int status, v
 
     if (status == 0 && length == 0)
     {
-	std::cout << "File " << fileptr->filename << " received successfully!" << std::endl;
-	fileptr->stream.close();
-	ctx->files.erase(id);
+        std::cout << "File " << fileptr->filename << " received successfully!" << std::endl;
+        fileptr->stream.close();
+        ctx->files.erase(id);
     }
     else if (status)
     {
-	std::cout << "Error receiving file '" << fileptr->filename << "': " << status << std::endl;
-	fileptr->stream.close();
-	ctx->files.erase(id);
+        std::cout << "Error receiving file '" << fileptr->filename << "': " << status << std::endl;
+        fileptr->stream.close();
+        ctx->files.erase(id);
     }
     else
     {
-	fileptr->received += length;
-	float percent = ((float)fileptr->received / (float)fileptr->size) * 100.0f;
-	std::cout << "File '" << fileptr->filename << "': "
-		  << std::setprecision(4) << percent << "%"
-		  << " (" << fileptr->received << "/" << fileptr->size << ")" << std::endl;
-	fileptr->stream.write(data, length);
+        fileptr->received += length;
+        float percent = ((float)fileptr->received / (float)fileptr->size) * 100.0f;
+
+        std::cout << "File '" << fileptr->filename << "': "
+              << std::setprecision(4) << percent << "%"
+              << " (" << fileptr->received << "/" << fileptr->size << ")" << std::endl;
+
+        fileptr->stream.write(data, length);
     }
 }
 
 void event_dcc_send_req(irc_session_t* session, const char* nick, const char* addr, const char* filename, unsigned long size, irc_dcc_t dccid)
 {
-
     IRCContext* ctx = (IRCContext*) irc_get_ctx(session);
     boost::filesystem::path p(filename);
     DCCFilePtr fileptr = std::make_shared<DCCFile>(dccid, filename, size);
