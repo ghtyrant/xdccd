@@ -3,6 +3,8 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/filesystem/path.hpp>
 #include <cinttypes>
 #include <thread>
 #include <chrono>
@@ -173,27 +175,44 @@ class DCCFile
 {
     public:
         DCCFile(const std::string &ip, const std::string &port, const std::string &filename, std::uintmax_t size)
-            : ip(ip), port(port), filename(filename), size(size), transfer_started(false)
-        {}
+            : ip(ip), port(port), filename(filename), size(size), transfer_started(false), path("downloads")
+        {
+            path /= filename;
+        }
+
+        void open()
+        { 
+            stream.open(path, std::ios::binary);
+        }
+
+        void close()
+        {
+            stream.close();
+        }
+
+        void write(const char* data, std::streamsize len)
+        {
+          stream.write(data, len);
+        }
 
         std::string ip;
         std::string port;
         std::string filename;
         std::uintmax_t size;
+        std::uintmax_t received;
         bool transfer_started;
+        boost::filesystem::path path;
+        boost::filesystem::ofstream stream;
 };
 
-class Task
-{};
-
-class DCCReceiveTask : public Task
+class DCCReceiveTask
 {
     public:
         DCCReceiveTask(std::shared_ptr<DCCFile> file)
-            : file(file), socket(io_service)
+            : file(file)
         {}
 
-        bool connect()
+        bool connect(boost::asio::io_service &io_service, boost::asio::ip::tcp::socket &socket)
         {
             boost::asio::ip::tcp::resolver resolver(io_service);
             boost::asio::ip::tcp::resolver::query query(file->ip, file->port);
@@ -222,33 +241,59 @@ class DCCReceiveTask : public Task
 
         void operator()()
         {
-            if (!connect())
+            boost::asio::io_service io_service;
+            boost::asio::ip::tcp::socket socket(io_service);
+
+            if (!connect(io_service, socket))
                 return;
 
             std::cout << "Start download!" << std::endl;
 
+            float old_percent = 0.0f;
+            file->open();
             for (;;)
             {
-                std::array<char, 4096> buffer;
+                std::array<char, 8196> buffer;
                 boost::system::error_code error;
 
                 std::size_t len = socket.read_some(boost::asio::buffer(buffer), error);
-                std::cout << "Read " << len << "bytes!" << std::endl;
+                file->received += len;
+                file->write(buffer.data(), len);
 
-                if (error == boost::asio::error::eof)
+                uint32_t total = htonl(file->received);
+                boost::asio::write(socket, boost::asio::buffer(&total, sizeof(total)));
+
+                float percent = ((float)file->received / (float)file->size) * 100.0f;
+
+                if (percent - old_percent > 5.0f)
+                {
+                    std::cout << "File '" << file->filename << "': "
+                              << std::setprecision(4) << percent << "%"
+                              << " (" << file->received << "/" << file->size << ")" << std::endl;
+
+                    old_percent = percent;
+                }
+
+                if (error == boost::asio::error::eof || file->received == file->size)
                     break; // Connection closed cleanly by peer.
                 else if (error)
+                {
+                    io_service.stop();
+                    file->close();
                     throw boost::system::system_error(error); // Some other error.
+                }
 
             };
+
+            io_service.stop();
+            file->close();
 
             std::cout << "Downloaded file!" << std::endl;
         }
 
     private:
         std::shared_ptr<DCCFile> file;
-        boost::asio::io_service io_service;
-        boost::asio::ip::tcp::socket socket;
+
 };
 
 class DCCBot
@@ -299,13 +344,23 @@ class DCCBot
                     std::string size;
                     iss >> filename >> ip >> port >> size;
 
-                    unsigned long int_ip = std::stol(ip);
-                    boost::asio::ip::address_v4 addr(int_ip);
+                    boost::asio::ip::address addr;
+                    if (ip.find(':') != std::string::npos)
+                    {
+                        boost::asio::ip::address_v6 tmp(boost::asio::ip::address_v6::from_string(ip));
+                        addr = boost::asio::ip::address(tmp);
+                    }
+                    else
+                    {
+                        unsigned long int_ip = std::stol(ip);
+                        boost::asio::ip::address_v4 tmp(int_ip);
+                        addr = boost::asio::ip::address(tmp);
+                    }
 
                     std::cout << "DCC SEND request, offering file " << filename << " on ip " << addr.to_string() << ":" << port << std::endl;
 
                     std::lock_guard<std::mutex> lock(files_lock);
-                    std::shared_ptr<DCCFile> file(std::make_shared<DCCFile>(ip, port, filename, std::strtoumax(size.c_str(), nullptr, 10)));
+                    std::shared_ptr<DCCFile> file(std::make_shared<DCCFile>(addr.to_string(), port, filename, std::strtoumax(size.c_str(), nullptr, 10)));
                     files.push_back(file);
 
                     threadpool.run_task(DCCReceiveTask(file));
@@ -335,7 +390,7 @@ int main(int argc, char* argv[])
 {
 
     //DCCBot bot("irc.abjects.net", "6667", "test123");
-    DCCBot bot("blitzforum.de", "6667", "test123");
+    DCCBot bot("localhost", "6667", "test123");
     bot.run();
 
     std::cout << "Quitting ..." << std::endl;
