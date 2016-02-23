@@ -1,6 +1,6 @@
 CXX=clang++
 CXXFLAGS=-g -I/usr/include/libircclient -std=c++14 -Wall -Wextra -pedantic
-LDFLAGS=-lboost_filesystem -lboost_system -lboost_thread -lpthread
+LDFLAGS=-lboost_filesystem -lboost_system -lboost_thread -lpthread -lssl -lcrypto
 
 OBJDIR=obj
 CXXFILES := $(shell find src -mindepth 1 -maxdepth 4 -name "*.cpp")

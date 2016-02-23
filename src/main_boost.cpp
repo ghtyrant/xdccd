@@ -10,6 +10,7 @@
 #include <chrono>
 
 #include "threadpool.h"
+#include "socket.h"
 
 using namespace std::literals;
 
@@ -63,9 +64,15 @@ class IRCMessage
 class IRCConnection
 {
     public:
-        IRCConnection(const std::string &host, std::string port, const read_handler_t &read_handler)
-            : host(host), port(port), socket(io_service), read_handler(read_handler)
+        IRCConnection(const std::string &host, std::string port, const read_handler_t &read_handler, bool use_ssl)
+            : host(host), port(port), read_handler(read_handler)
         {
+            std::cout << typeid(msg_buffer).name() << std::endl;
+            if (use_ssl)
+                socket = std::make_unique<SSLSocket>(io_service);
+            else
+                socket = std::make_unique<PlainSocket>(io_service);
+
             connect();
         }
 
@@ -83,8 +90,9 @@ class IRCConnection
                 if (!error)
                     break;
 
-                socket.close();
-                socket.connect(*iter++, error);
+                std::cout << "Connecting ..." << std::endl;
+                socket->close();
+                socket->connect(*iter++, error);
 
                 if (error)
                     std::cout << "Error connecting to " << host << ": " << error.message() << std::endl;
@@ -98,8 +106,7 @@ class IRCConnection
 
         void run()
         {
-            boost::asio::async_read_until(
-                    socket,
+            socket->async_read_until(
                     msg_buffer,
                     "\r\n",
                     boost::bind(&IRCConnection::read, this,
@@ -124,8 +131,7 @@ class IRCConnection
 
                 msg_buffer.consume(count);
 
-                boost::asio::async_read_until(
-                    socket,
+                socket->async_read_until(
                     msg_buffer,
                     "\r\n",
                     boost::bind(&IRCConnection::read, this,
@@ -137,12 +143,12 @@ class IRCConnection
 
         void write(const std::string &message)
         {
-            boost::asio::write(socket, boost::asio::buffer(message + "\r\n"));
+            socket->write(boost::asio::buffer(message + "\r\n"));
         }
 
         void close()
         {
-            socket.close();
+            socket->close();
             io_service.stop();
         }
 
@@ -162,7 +168,7 @@ class IRCConnection
         std::string port;
 
         boost::asio::io_service io_service;
-        boost::asio::ip::tcp::socket socket;
+        std::unique_ptr<Socket> socket;
 
         read_handler_t read_handler;
         write_handler_t write_handler;
@@ -175,7 +181,7 @@ class DCCFile
 {
     public:
         DCCFile(const std::string &ip, const std::string &port, const std::string &filename, std::uintmax_t size)
-            : ip(ip), port(port), filename(filename), size(size), transfer_started(false), path("downloads")
+            : ip(ip), port(port), filename(filename), size(size), received(0), transfer_started(false), path("downloads")
         {
             path /= filename;
         }
@@ -299,8 +305,8 @@ class DCCReceiveTask
 class DCCBot
 {
     public:
-        DCCBot(const std::string &host, const std::string &port, const std::string &nick)
-            : connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); })),
+        DCCBot(const std::string &host, const std::string &port, const std::string &nick, bool use_ssl)
+            : connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), use_ssl),
             threadpool(5)
         {
             connection.write((boost::format("NICK %s") % nick).str());
@@ -311,7 +317,7 @@ class DCCBot
         {
             IRCMessage msg(message);
 
-            if (msg.type.compare("PRIVMSG") == 0)
+            if (msg.type.compare("PRIVMSG") != 0)
                 std::cout << "Received: '" << message << "' (CTCP: " << msg.ctcp << ")" << std::endl;
 
             if (msg.raw.substr(0, 4) == "PING")
@@ -386,6 +392,7 @@ class DCCBot
 
         void on_joined()
         {
+            boost::this_thread::sleep(boost::posix_time::milliseconds(8000));
             connection.write("PRIVMSG [MG]-HD|EU|S|Holly :XDCC SEND 209");
         }
 
@@ -399,7 +406,8 @@ class DCCBot
 int main(int argc, char* argv[])
 {
 
-    DCCBot bot("irc.abjects.net", "6667", "bahs3b34d");
+    DCCBot bot("irc.abjects.net", "9999", "bahs3b34d", true);
+    //DCCBot bot("irc.abjects.net", "6667", "bahs3b34d", false);
     //DCCBot bot("localhost", "6667", "test123");
     bot.run();
 
