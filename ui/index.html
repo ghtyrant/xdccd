@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="us">
+<head>
+  <meta charset="utf-8">
+  <title>XDCC Downloader</title>
+  <link href="jquery-ui.css" rel="stylesheet">
+  <script src="external/jquery/jquery.js"></script>
+  <script src="jquery-ui.js"></script>
+  <script src="external/template/jqueryTemplate.js"></script>
+  <style>
+  body{
+    font: 62.5% "Trebuchet MS", sans-serif;
+    margin: 50px;
+  }
+  .Headers {
+    margin-top: 2em;
+  }
+  #dialog-link {
+    padding: .4em 1em .4em 20px;
+    text-decoration: none;
+    position: relative;
+  }
+  #dialog-link span.ui-icon {
+    margin: 0 5px 0 0;
+    position: absolute;
+    left: .2em;
+    top: 50%;
+    margin-top: -8px;
+  }
+  #icons {
+    margin: 0;
+    padding: 0;
+  }
+  #icons li {
+    margin: 2px;
+    position: relative;
+    padding: 4px 0;
+    cursor: pointer;
+    float: left;
+    list-style: none;
+  }
+  #icons span.ui-icon {
+    float: left;
+    margin: 0 4px;
+  }
+  .fakewindowcontain .ui-widget-overlay {
+    position: absolute;
+  }
+  select {
+    width: 200px;
+  }
+  </style>
+</head>
+<body>
+<h2 class="Headers">Bots</h2>
+<div id="tabs">
+  <ul>
+    <li><a href="#newbot">+</a></li>
+  </ul>
+  <div id="newbot"><form>
+  Server: <input id="server">
+  Nick: <input id="nickname">
+  Channels: <input id="channels">
+  <input type="submit" value="Launch"></form></div>
+</div>
+
+<div id="test"></div>
+
+<script type="text/javascript">
+$( "#tabs" ).tabs();
+var tabs = $( "#tabs" ).tabs();
+var ul = tabs.find( "ul" );
+tabs.tabs( "refresh" );
+
+var availableTags = [
+  "irc.alphairc.com",
+  "irc.abandoned-irc.net",
+  "irc.abjects.net",
+];
+$( "#server" ).autocomplete({
+  source: availableTags
+});
+
+</script>
+<script id="botTemplate" type="text/x-jQuery-tmpl">
+        <div id="bot${id}">
+            <div>Server: ${serverName}</div><div>Channels: {{each channels}} ${$value} {{/each}}</div></div>
+        </div>
+        <div id="downloads${id}">
+        </div>
+</script>
+<script id="botTemplateTab" type="text/x-jQuery-tmpl">
+  <li><a href="#bot${id}">${botname}</a></li>
+</script>
+<script id="downloadTemplate" type="text/x-jQuery-tmpl">
+  <div>File: ${filename}</div>
+  <div id="progressbar${id}"></div>
+    $( "#progressbar${id}" ).progressbar({
+    value: ${transfered}
+  });
+</script>
+
+<script type="text/javascript">
+        var bots = [
+            { id:"1", botname:"nnkh", serverName: "abjects", channels: ["#moviegods", "#mg-chat"] },
+            { id:"2", botname:"LeecherGod", serverName: "irc.alphairc.com", channels: ["#HIDD3N-ZAUBERBUDE"] },
+            { id:"3", botname:"WarezKing", serverName: "irc.abandoned-irc.net", channels: ["#WAREZ"] },
+        ];
+
+        var downloads = [
+          {botid:"1", filename:"test.tar.gz", filesize:"234MB", transfered:30 },
+          {botid:"2", filename:"test.tar.gz", filesize:"234MB", transfered:30 },
+        ];
+        $("#botTemplateTab").tmpl(bots).appendTo(ul);
+        $("#botTemplate").tmpl(bots).appendTo(tabs); 
+        tabs.tabs( "refresh" );
+        $("#downloadTemplate").tmpl(downloads).appendTo("#test");
+</script>
+</body>
+</html>
