@@ -311,7 +311,8 @@ class DCCBot
         {
             IRCMessage msg(message);
 
-            std::cout << "Received: '" << message << "' (CTCP: " << msg.ctcp << ")" << std::endl;
+            if (msg.type.compare("PRIVMSG") == 0)
+                std::cout << "Received: '" << message << "' (CTCP: " << msg.ctcp << ")" << std::endl;
 
             if (msg.raw.substr(0, 4) == "PING")
             {
@@ -321,6 +322,9 @@ class DCCBot
 
             if (msg.type == "001")
                 on_connected();
+
+            if (msg.type == "366")
+                on_joined();
 
             if (msg.ctcp)
                 handle_ctcp(msg);
@@ -376,7 +380,13 @@ class DCCBot
 
         void on_connected()
         {
-            connection.write("JOIN #asdfasdf");
+            connection.write("JOIN #mg-chat");
+            connection.write("JOIN #moviegods");
+        }
+
+        void on_joined()
+        {
+            connection.write("PRIVMSG [MG]-HD|EU|S|Holly :XDCC SEND 209");
         }
 
     private:
@@ -389,8 +399,8 @@ class DCCBot
 int main(int argc, char* argv[])
 {
 
-    //DCCBot bot("irc.abjects.net", "6667", "test123");
-    DCCBot bot("localhost", "6667", "test123");
+    DCCBot bot("irc.abjects.net", "6667", "bahs3b34d");
+    //DCCBot bot("localhost", "6667", "test123");
     bot.run();
 
     std::cout << "Quitting ..." << std::endl;
