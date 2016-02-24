@@ -5,9 +5,9 @@
 #include "dccreceivetask.h"
 #include "ircmessage.h"
 
-xdccd::DCCBot::DCCBot(const std::string &host, const std::string &port, const std::string &nick, bool use_ssl)
+xdccd::DCCBot::DCCBot(ThreadpoolPtr threadpool, const std::string &host, const std::string &port, const std::string &nick, bool use_ssl)
     : connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), use_ssl),
-    threadpool(5)
+    threadpool(threadpool)
 {
     connection.write((boost::format("NICK %s") % nick).str());
     connection.write((boost::format("USER %s * * %s") % nick % nick).str());
@@ -68,7 +68,7 @@ void xdccd::DCCBot::handle_ctcp(const xdccd::IRCMessage &msg)
             std::shared_ptr<DCCFile> file(std::make_shared<DCCFile>(addr.to_string(), port, filename, std::strtoumax(size.c_str(), nullptr, 10)));
             files.push_back(file);
 
-            threadpool.run_task(DCCReceiveTask(file));
+            threadpool->run_task(DCCReceiveTask(file));
         }
     }
 }

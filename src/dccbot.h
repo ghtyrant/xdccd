@@ -12,10 +12,12 @@ namespace xdccd
 class IRCConnection;
 class IRCMessage;
 
+void launch_bot_task();
+
 class DCCBot
 {
     public:
-        DCCBot(const std::string &host, const std::string &port, const std::string &nick, bool use_ssl);
+        DCCBot(ThreadpoolPtr threadpool, const std::string &host, const std::string &port, const std::string &nick, bool use_ssl);
         void read_handler(const std::string &message);
         void handle_ctcp(const xdccd::IRCMessage &msg);
         void run();
@@ -26,7 +28,9 @@ class DCCBot
         xdccd::IRCConnection connection;
         std::vector<DCCFilePtr> files;
         std::mutex files_lock;
-        Threadpool threadpool;
+        ThreadpoolPtr threadpool;
 };
+
+typedef std::shared_ptr<DCCBot> DCCBotPtr;
 
 }

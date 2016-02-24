@@ -62,4 +62,6 @@ class Threadpool
         std::mutex mutex;
 };
 
+typedef std::shared_ptr<Threadpool> ThreadpoolPtr;
+
 }
