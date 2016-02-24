@@ -1,7 +1,7 @@
 #include <iostream>
 #include <chrono>
 
-#include "botmanager.h"
+#include "api.h"
 
 int main(int argc, char* argv[])
 {
@@ -11,9 +11,9 @@ int main(int argc, char* argv[])
     //xdccd::DCCBot bot("blitzforum.de", "6697", "test123", true);
     //bot.run();
 
-    xdccd::BotManager manager(10);
-    manager.launch_bot("irc.abjects.net", "6667", "bahs3b34d", { "#moviegods", "#mg-chat" }, false);
-    manager.run();
+    xdccd::API api;
+    api.get_bot_manager().launch_bot("irc.abjects.net", "6667", "bahs3b34d", { "#moviegods", "#mg-chat" }, false);
+    api.run();
 
     std::cout << "Quitting ..." << std::endl;
     return 0;

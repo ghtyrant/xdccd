@@ -102,3 +102,13 @@ void xdccd::IRCConnection::set_write_handler(const write_handler_t &handler)
     write_handler = handler;
 }
 
+const std::string &xdccd::IRCConnection::get_host() const
+{
+    return host;
+}
+
+const std::string &xdccd::IRCConnection::get_port() const
+{
+    return port;
+}
+

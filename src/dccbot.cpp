@@ -6,7 +6,7 @@
 #include "ircmessage.h"
 
 xdccd::DCCBot::DCCBot(ThreadpoolPtr threadpool, const std::string &host, const std::string &port, const std::string &nick, bool use_ssl)
-    : connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), use_ssl),
+    : nickname(nick), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), use_ssl),
     threadpool(threadpool)
 {
     connection.write((boost::format("NICK %s") % nick).str());
@@ -26,17 +26,34 @@ void xdccd::DCCBot::read_handler(const std::string &message)
         return;
     }
 
+    // 001 is the server's welcome message
     if (msg.command == "001")
+    {
         on_connected();
+        return;
+    }
 
+    // 366 is the end of a channel's name list
     if (msg.command == "366")
-        on_joined(msg.params[1]);
+    {
+        on_join(msg.params[1]);
+        return;
+    }
+
+    if (msg.command == "PART" && msg.params[0] == nickname)
+    {
+        on_part(msg.params[1]);
+        return;
+    }
 
     if (msg.ctcp)
-        handle_ctcp(msg);
+    {
+        on_ctcp(msg);
+        return;
+    }
 }
 
-void xdccd::DCCBot::handle_ctcp(const xdccd::IRCMessage &msg)
+void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
 {
     std::cout << "CTCP-Message: " << msg.ctcp_command << " says: '" << msg.params[1] << "'" << std::endl;
 
@@ -84,9 +101,33 @@ void xdccd::DCCBot::on_connected()
     connection.write("JOIN #moviegods");
 }
 
-void xdccd::DCCBot::on_joined(const std::string &channel)
+void xdccd::DCCBot::on_join(const std::string &channel)
 {
-    std::cout << "Just joined channel " << channel << std::endl;
-    boost::this_thread::sleep(boost::posix_time::milliseconds(8000));
-    connection.write("PRIVMSG [MG]-HD|EU|S|Holly :XDCC SEND 209");
+    channels.push_back(channel);
 }
+
+void xdccd::DCCBot::on_part(const std::string &channel)
+{
+    std::remove_if(channels.begin(), channels.end(), [channel](const std::string &name) { return name == channel; });
+}
+
+const std::vector<std::string> xdccd::DCCBot::get_channels() const
+{
+    return channels;
+}
+
+const std::string &xdccd::DCCBot::get_nickname() const
+{
+    return nickname;
+}
+
+const std::string &xdccd::DCCBot::get_host() const
+{
+    return connection.get_host();
+}
+
+const std::string &xdccd::DCCBot::get_port() const
+{
+    return connection.get_port();
+}
+

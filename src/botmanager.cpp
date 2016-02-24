@@ -12,9 +12,13 @@ void xdccd::BotManager::launch_bot(const std::string &host, const std::string &p
     threadpool->run_task([bot]() { bot->run(); });
 }
 
+std::vector<xdccd::DCCBotPtr> xdccd::BotManager::get_bots()
+{
+    return bots;
+}
+
 void xdccd::BotManager::run()
 {
-    api.run();
 }
 
 

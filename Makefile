@@ -1,5 +1,5 @@
 CXX=clang++
-CXXFLAGS=-g -I/usr/include/libircclient -std=c++14 -Wall -Wextra -pedantic
+CXXFLAGS=-g -std=c++14 -Wall -Wextra -pedantic
 LDFLAGS=-lboost_filesystem -lboost_system -lboost_thread -lpthread -lssl -lcrypto -lrestbed
 
 OBJDIR=obj
