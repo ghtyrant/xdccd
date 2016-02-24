@@ -77,44 +77,52 @@ var availableTags = [
   "irc.abandoned-irc.net",
   "irc.abjects.net",
 ];
+
 $( "#server" ).autocomplete({
   source: availableTags
 });
 
+function updateProgressbars(dls)
+{
+  for(var key in dls)
+  {
+    for(var dl in dls[key].downloads)
+    {  
+      $("#progressbar"+dls[key].downloads[dl].dlid).progressbar({
+        value: dls[key].downloads[dl].transfered
+      });
+    }
+  }
+}
+
 </script>
+
 <script id="botTemplate" type="text/x-jQuery-tmpl">
         <div id="bot${id}">
-            <div>Server: ${serverName}</div><div>Channels: {{each channels}} ${$value} {{/each}}</div></div>
-        </div>
-        <div id="downloads${id}">
+            <div>Server: ${serverName}</div><div>Channels: {{each channels}} ${$value} {{/each}}</div>
+            {{if downloads }}
+              {{each downloads}}
+              <div><b>File:</b> ${$value.filename} <b>Size:</b> ${$value.filesize}</div>
+              <div id="progressbar${dlid}"></div>
+              {{/each}}
+            {{/if downloads}}
         </div>
 </script>
+
 <script id="botTemplateTab" type="text/x-jQuery-tmpl">
   <li><a href="#bot${id}">${botname}</a></li>
-</script>
-<script id="downloadTemplate" type="text/x-jQuery-tmpl">
-  <div>File: ${filename}</div>
-  <div id="progressbar${id}"></div>
-    $( "#progressbar${id}" ).progressbar({
-    value: ${transfered}
-  });
 </script>
 
 <script type="text/javascript">
         var bots = [
-            { id:"1", botname:"nnkh", serverName: "abjects", channels: ["#moviegods", "#mg-chat"] },
-            { id:"2", botname:"LeecherGod", serverName: "irc.alphairc.com", channels: ["#HIDD3N-ZAUBERBUDE"] },
+            { id:"1", botname:"nnkh", serverName: "abjects", channels: ["#moviegods", "#mg-chat"], downloads:[{dlid:1, filename:"test.tar.gz", filesize:"234MB", transfered:30 }, {dlid:2, filename:"test.tar.gz", filesize:"234MB", transfered:40 }]},
+            { id:"2", botname:"LeecherGod", serverName: "irc.alphairc.com", channels: ["#HIDD3N-ZAUBERBUDE"], downloads:[{dlid:3, filename:"test.tar.gz", filesize:"234MB", transfered:10 }] },
             { id:"3", botname:"WarezKing", serverName: "irc.abandoned-irc.net", channels: ["#WAREZ"] },
-        ];
-
-        var downloads = [
-          {botid:"1", filename:"test.tar.gz", filesize:"234MB", transfered:30 },
-          {botid:"2", filename:"test.tar.gz", filesize:"234MB", transfered:30 },
         ];
         $("#botTemplateTab").tmpl(bots).appendTo(ul);
         $("#botTemplate").tmpl(bots).appendTo(tabs); 
         tabs.tabs( "refresh" );
-        $("#downloadTemplate").tmpl(downloads).appendTo("#test");
+        updateProgressbars(bots);
 </script>
 </body>
 </html>
