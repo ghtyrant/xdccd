@@ -57,14 +57,24 @@
   <ul>
     <li><a href="#newbot">+</a></li>
   </ul>
-  <div id="newbot"><form>
-  Server: <input id="server">
-  Nick: <input id="nickname">
-  Channels: <input id="channels">
-  <input type="submit" value="Launch"></form></div>
+  <div id="newbot">
+    <form>
+      Server: <input id="server">
+      Nick: <input id="nickname">
+      Channels: <input id="channels">
+      <button id="launchButton" type="submit">Launch</button>
+    </form>
+  </div>
 </div>
-
-<div id="test"></div>
+<h2 class="Headers">Search</h2>
+<div id="searchInput">
+  <form>
+    <input id="search">
+    <button id="searchButton" type="submit">Search</button>
+  </form>
+</div>
+<div id="searchResult" style="margin-top: 15px">
+</div>
 
 <script type="text/javascript">
 $( "#tabs" ).tabs();
@@ -72,49 +82,126 @@ var tabs = $( "#tabs" ).tabs();
 var ul = tabs.find( "ul" );
 tabs.tabs( "refresh" );
 
-var availableTags = [
+var availableServers = [
   "irc.alphairc.com",
   "irc.abandoned-irc.net",
   "irc.abjects.net",
+  "irc.criten.net",
+  "irc.Priv8.jp",
+  "irc.rizon.no",
+  "irc.​1andallirc.​net",
+  "irc.frozyn.net",
+  "irc.​mircphantom.​net",
+  "est.relaxedirc.net",
+  "irc.Xerologic.net",
+  "irc.zombiesec.net",
+  "irc.ztvland.net"
 ];
+
 $( "#server" ).autocomplete({
-  source: availableTags
+  source: availableServers
 });
 
+function updateProgressbars(dls)
+{
+  for(var key in dls)
+  {
+    for(var dl in dls[key].downloads)
+    {  
+      $("#progressbar"+dls[key].downloads[dl].dlid).progressbar({
+        value: dls[key].downloads[dl].transfered
+      });
+    }
+  }
+}
+
+$( "#dialog-link" ).hover(
+  function() {
+    $( this ).addClass( "ui-state-hover" );
+  },
+  function() {
+    $( this ).removeClass( "ui-state-hover" );
+  }
+);
+
+$( "#searchButton" ).button();
+$( "#launchButton" ).button();
 </script>
+
 <script id="botTemplate" type="text/x-jQuery-tmpl">
         <div id="bot${id}">
-            <div>Server: ${serverName}</div><div>Channels: {{each channels}} ${$value} {{/each}}</div></div>
-        </div>
-        <div id="downloads${id}">
+            <div>Server: ${serverName}</div><div>Channels: {{each channels}} ${$value} {{/each}}</div>
+            {{if downloads }}
+              {{each downloads}}
+              <div><b>File:</b> ${$value.filename} <b>Size:</b> ${$value.filesize}</div>
+              <div id="progressbar${dlid}"></div>
+              {{/each}}
+            {{/if downloads}}
         </div>
 </script>
+
 <script id="botTemplateTab" type="text/x-jQuery-tmpl">
   <li><a href="#bot${id}">${botname}</a></li>
 </script>
-<script id="downloadTemplate" type="text/x-jQuery-tmpl">
-  <div>File: ${filename}</div>
-  <div id="progressbar${id}"></div>
-    $( "#progressbar${id}" ).progressbar({
-    value: ${transfered}
-  });
+
+<script id="serachResultTemplate" type="text/x-jQuery-tmpl">
+<div>
+  <div style="float:left; margin: 0 auto;">
+    File: ${filename} Size: ${filesize} 
+    </div>
+    <div style="float:left; margin: 0 auto; margin-left: 1em;">
+      <a href="#" id="dialog-link" class="ui-state-default ui-corner-all"><span class="ui-icon ui-icon-info"></span>more</a>
+    </div>
+    <div style="float:left; margin: 0 auto;">
+    <a href="#" id="dialog-link" class="ui-state-default ui-corner-all"><span class="ui-icon ui-icon-circle-plus"></span>add</a>
+    </div>
+  </div>
+</div>
+
+<div id="dialog" title="Dialog Title">
+  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+</div>
+
 </script>
 
 <script type="text/javascript">
         var bots = [
-            { id:"1", botname:"nnkh", serverName: "abjects", channels: ["#moviegods", "#mg-chat"] },
-            { id:"2", botname:"LeecherGod", serverName: "irc.alphairc.com", channels: ["#HIDD3N-ZAUBERBUDE"] },
-            { id:"3", botname:"WarezKing", serverName: "irc.abandoned-irc.net", channels: ["#WAREZ"] },
+            { id:"1", botname:"foo", serverName: "abjects", channels: ["#x", "#y"], downloads:[{dlid:1, filename:"test.tar.gz", filesize:"234MB", transfered:30 }, {dlid:2, filename:"test.tar.gz", filesize:"234MB", transfered:40 }]},
+            { id:"2", botname:"LeecherGod", serverName: "irc.alphairc.com", channels: ["#dude"], downloads:[{dlid:3, filename:"test.tar.gz", filesize:"234MB", transfered:10 }] },
+            { id:"3", botname:"SoftKing", serverName: "irc.abandoned-irc.net", channels: ["#xdcc"] },
         ];
-
-        var downloads = [
-          {botid:"1", filename:"test.tar.gz", filesize:"234MB", transfered:30 },
-          {botid:"2", filename:"test.tar.gz", filesize:"234MB", transfered:30 },
+        var results = [
+          {filename: "foobar", filesize:"1.4G", network:"foobar", channel:"#adsf", provider:"mephisto", pkgnumber:"123"}
         ];
         $("#botTemplateTab").tmpl(bots).appendTo(ul);
         $("#botTemplate").tmpl(bots).appendTo(tabs); 
+        $("#serachResultTemplate").tmpl(results).appendTo("#searchResult");
         tabs.tabs( "refresh" );
-        $("#downloadTemplate").tmpl(downloads).appendTo("#test");
+        updateProgressbars(bots);
+        $( "#dialog" ).dialog({
+          autoOpen: false,
+          width: 400,
+          buttons: [
+            {
+              text: "Ok",
+              click: function() {
+                $( this ).dialog( "close" );
+              }
+            },
+            {
+              text: "Cancel",
+              click: function() {
+                $( this ).dialog( "close" );
+              }
+            }
+          ]
+        });
+
+        // Link to open the dialog
+        $( "#dialog-link" ).click(function( event ) {
+          $( "#dialog" ).dialog( "open" );
+          event.preventDefault();
+        });
 </script>
 </body>
 </html>
