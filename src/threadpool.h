@@ -5,6 +5,9 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
+namespace xdccd
+{
+
 class Threadpool
 {
     public:
@@ -58,3 +61,5 @@ class Threadpool
         std::size_t available;
         std::mutex mutex;
 };
+
+}
