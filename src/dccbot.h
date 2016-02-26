@@ -12,7 +12,18 @@ namespace xdccd
 class IRCConnection;
 class IRCMessage;
 
-void launch_bot_task();
+struct DCCAnnounce
+{
+    DCCAnnounce(const std::string &bot, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count);
+    std::string hash;
+    std::string bot;
+    std::string filename;
+    std::string size;
+    std::string slot;
+    std::string download_count;
+};
+
+typedef std::shared_ptr<DCCAnnounce> DCCAnnouncePtr;
 
 class DCCBot
 {
@@ -24,18 +35,23 @@ class DCCBot
         void on_ctcp(const xdccd::IRCMessage &msg);
         void on_join(const std::string &channel);
         void on_part(const std::string &channel);
+        void on_privmsg(const xdccd::IRCMessage &msg);
         const std::vector<std::string> get_channels() const;
         const std::string &get_nickname() const;
         const std::string &get_host() const;
         const std::string &get_port() const;
 
     private:
+        void add_announce(const std::string &bot, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count);
+        DCCAnnouncePtr get_announce(const std::string &hash) const;
+
         std::string nickname;
         xdccd::IRCConnection connection;
         std::vector<DCCFilePtr> files;
         std::mutex files_lock;
         ThreadpoolPtr threadpool;
         std::vector<std::string> channels;
+        std::map<std::string, DCCAnnouncePtr> announces;
 };
 
 typedef std::shared_ptr<DCCBot> DCCBotPtr;

@@ -1,9 +1,19 @@
 #include <boost/format.hpp>
 #include <cinttypes>
+#include <regex>
 
 #include "dccbot.h"
 #include "dccreceivetask.h"
 #include "ircmessage.h"
+
+
+xdccd::DCCAnnounce::DCCAnnounce(const std::string &bot,
+        const std::string &filename,
+        const std::string &size,
+        const std::string &slot,
+        const std::string &download_count)
+    : hash(bot+slot), bot(bot), filename(filename), size(size), slot(slot), download_count(download_count)
+{}
 
 xdccd::DCCBot::DCCBot(ThreadpoolPtr threadpool, const std::string &host, const std::string &port, const std::string &nick, bool use_ssl)
     : nickname(nick), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), use_ssl),
@@ -16,9 +26,6 @@ xdccd::DCCBot::DCCBot(ThreadpoolPtr threadpool, const std::string &host, const s
 void xdccd::DCCBot::read_handler(const std::string &message)
 {
     xdccd::IRCMessage msg(message);
-
-    if (msg.command != "PRIVMSG")
-        std::cout << "Received: '" << message << "' (CTCP: " << msg.ctcp << ")" << std::endl;
 
     if (msg.command == "PING")
     {
@@ -46,10 +53,15 @@ void xdccd::DCCBot::read_handler(const std::string &message)
         return;
     }
 
-    if (msg.ctcp)
+    if (msg.command == "PRIVMSG")
     {
-        on_ctcp(msg);
-        return;
+        if (msg.ctcp)
+        {
+            on_ctcp(msg);
+            return;
+        }
+
+        on_privmsg(msg);
     }
 }
 
@@ -97,18 +109,38 @@ void xdccd::DCCBot::run()
 
 void xdccd::DCCBot::on_connected()
 {
+    std::cout << "Connected!" << std::endl;
     connection.write("JOIN #mg-chat");
     connection.write("JOIN #moviegods");
 }
 
 void xdccd::DCCBot::on_join(const std::string &channel)
 {
+    std::cout << "Joined channel " << channel << std::endl;
     channels.push_back(channel);
 }
 
 void xdccd::DCCBot::on_part(const std::string &channel)
 {
     std::remove_if(channels.begin(), channels.end(), [channel](const std::string &name) { return name == channel; });
+}
+
+void xdccd::DCCBot::on_privmsg(const xdccd::IRCMessage &msg)
+{
+    static std::regex announce("#(\\d{1,3})\\s+(\\d+)x\\s+\\[\\s?(\\d+(?:\\.\\d+)?M|G)\\] (.*)", std::regex_constants::ECMAScript);
+
+    std::smatch m;
+    if (!std::regex_match(msg.params[1], m, announce))
+        return;
+
+    if (!m.empty() && m.size() == 5)
+    {
+        std::vector<std::string> result;
+        for (std::size_t i = 1; i < m.size(); ++i)
+            result.push_back(m[i].str());
+
+        add_announce(msg.nickname, result[3], result[2], result[0], result[1]);
+    }
 }
 
 const std::vector<std::string> xdccd::DCCBot::get_channels() const
@@ -131,3 +163,28 @@ const std::string &xdccd::DCCBot::get_port() const
     return connection.get_port();
 }
 
+void xdccd::DCCBot::add_announce(const std::string &bot, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count)
+{
+    DCCAnnouncePtr announce = std::make_shared<DCCAnnounce>(bot, filename, size, slot, download_count);
+    announces[announce->hash] = announce;
+
+    std::cout << "[Bot Announce] Bot: " << bot
+        << ", File: " << filename
+        << ", Size: " << size
+        << " in slot #" << slot
+        << ", downloaded " << download_count
+        << " times (size: " << sizeof(*announce)
+        << "b, total size ~ " << sizeof(*announce) * announces.size() + sizeof(announces)
+        << "b, announces: " << announces.size()
+        << ")" << std::endl;
+}
+
+xdccd::DCCAnnouncePtr xdccd::DCCBot::get_announce(const std::string &hash) const
+{
+    auto it = announces.find(hash);
+
+    if (it == announces.end())
+        return nullptr;
+
+    return it->second;
+}
