@@ -10,6 +10,7 @@ class IRCMessage
         IRCMessage(const std::string &message);
         
         std::string prefix;
+        std::string nickname;
         std::string command;
         std::vector<std::string> params;
         bool ctcp;
@@ -17,6 +18,7 @@ class IRCMessage
         std::vector<std::string> ctcp_params;
 
         std::string raw;
+
 };
 
 }

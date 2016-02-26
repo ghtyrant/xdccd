@@ -1,8 +1,12 @@
+#include <regex>
+
 #include "ircmessage.h"
 
 xdccd::IRCMessage::IRCMessage(const std::string &message)
     : ctcp(false), raw(message)
 {
+    static std::regex strip_color("\\x1f|\\x02|\\x12|\\x0f|\\x16|\\x03(?:\\d{1,2}(?:,\\d{1,2})?)?", std::regex_constants::ECMAScript);
+
     std::string msg = message;
 
     if (msg.empty())
@@ -16,6 +20,8 @@ xdccd::IRCMessage::IRCMessage(const std::string &message)
         std::size_t space_pos = msg.find(' ');
         prefix = msg.substr(1, space_pos - 1);
         msg.erase(0, space_pos + 1);
+
+        nickname = prefix.substr(0, prefix.find('!'));
     }
 
     // Parse command
@@ -40,33 +46,38 @@ xdccd::IRCMessage::IRCMessage(const std::string &message)
         params.push_back(trailing);
 
     // Parse CTCP messages
-    if (command == "PRIVMSG" && params[1][0] == 0x01 && params[1][params[1].length()-1] == 0x01)
+    if (command == "PRIVMSG")
     {
-        ctcp = true;
-        params[1] = params[1].substr(1, params[1].length() - 2);
-
-        std::string ctcp_msg = params[1];
-        space_pos = ctcp_msg.find(' ');
-        ctcp_command = ctcp_msg.substr(0, space_pos);
-        ctcp_msg.erase(0, space_pos + 1);
-
-        space_pos = ctcp_msg.find(' ');
-        while (space_pos != std::string::npos)
+        if(params[1][0] == 0x01 && params[1][params[1].length()-1] == 0x01)
         {
-            std::string param = ctcp_msg.substr(0, space_pos);
-            if (ctcp_msg[0] == '"')
+            ctcp = true;
+            params[1] = params[1].substr(1, params[1].length() - 2);
+
+            std::string ctcp_msg = params[1];
+            space_pos = ctcp_msg.find(' ');
+            ctcp_command = ctcp_msg.substr(0, space_pos);
+            ctcp_msg.erase(0, space_pos + 1);
+
+            space_pos = ctcp_msg.find(' ');
+            while (space_pos != std::string::npos)
             {
-                space_pos = ctcp_msg.find('"', 1);
-                param = ctcp_msg.substr(1, space_pos - 1);
-                space_pos++;
+                std::string param = ctcp_msg.substr(0, space_pos);
+                if (ctcp_msg[0] == '"')
+                {
+                    space_pos = ctcp_msg.find('"', 1);
+                    param = ctcp_msg.substr(1, space_pos - 1);
+                    space_pos++;
+                }
+
+                ctcp_msg.erase(0, space_pos + 1);
+                ctcp_params.push_back(param);
+                space_pos = ctcp_msg.find(" ");
             }
 
-            ctcp_msg.erase(0, space_pos + 1);
-            ctcp_params.push_back(param);
-            space_pos = ctcp_msg.find(" ");
-        } 
+            if (!ctcp_msg.empty())
+                ctcp_params.push_back(ctcp_msg);
+        }
 
-        if (!ctcp_msg.empty())
-            ctcp_params.push_back(ctcp_msg);
+        params[1] = std::regex_replace(params[1], strip_color, "");
     }
 }
