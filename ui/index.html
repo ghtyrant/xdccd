@@ -115,14 +115,46 @@ function updateProgressbars(dls)
   }
 }
 
-$( "#dialog-link" ).hover(
-  function() {
-    $( this ).addClass( "ui-state-hover" );
-  },
-  function() {
-    $( this ).removeClass( "ui-state-hover" );
+function updateDialogs(res)
+{
+  for(var key in res)
+  {
+     $( "#dialog-info-content"+res[key].id ).dialog({
+          autoOpen: false,
+          width: 400,
+          buttons: [
+            {
+              text: "Ok",
+              click: function() {
+                $( this ).dialog( "close" );
+              }
+            },
+            {
+              text: "Cancel",
+              click: function() {
+                $( this ).dialog( "close" );
+              }
+            }
+          ]
+        });
+
+        // Link to open the dialog
+        $( "#dialog-info"+res[key].id ).click(function( event ) {
+          $( "#dialog-info-content"+res[key].id ).dialog( "open" );
+          event.preventDefault();
+        });
+      $( "#dialog-info"+res[key].id ).hover(
+        function() {
+          $( this ).addClass( "ui-state-hover" );
+        },
+        function() {
+          $( this ).removeClass( "ui-state-hover" );
+        }
+      );
   }
-);
+}
+
+
 
 $( "#searchButton" ).button();
 $( "#launchButton" ).button();
@@ -145,23 +177,22 @@ $( "#launchButton" ).button();
 </script>
 
 <script id="serachResultTemplate" type="text/x-jQuery-tmpl">
-<div>
-  <div style="float:left; margin: 0 auto;">
-    File: ${filename} Size: ${filesize} 
-    </div>
-    <div style="float:left; margin: 0 auto; margin-left: 1em;">
-      <a href="#" id="dialog-link" class="ui-state-default ui-corner-all"><span class="ui-icon ui-icon-info"></span>more</a>
-    </div>
+  <div>
     <div style="float:left; margin: 0 auto;">
-    <a href="#" id="dialog-link" class="ui-state-default ui-corner-all"><span class="ui-icon ui-icon-circle-plus"></span>add</a>
+      File: ${filename} Size: ${filesize} 
+      </div>
+      <div style="float:left; margin: 0 auto; margin-left: 1em;">
+        <a href="#" id="dialog-info${id}" class="ui-state-default ui-corner-all"><span class="ui-icon ui-icon-info"></span>more</a>
+      </div>
+      <div style="float:left; margin: 0 auto;">
+      <a href="#" id="dialog-link${id}" class="ui-state-default ui-corner-all"><span class="ui-icon ui-icon-circle-plus"></span>add</a>
+      </div>
     </div>
   </div>
+<div id="dialog-info-content${id}" title="Details: ${filename}">
+  <div>Network: ${network} Channel: ${channel}</div>
+  <div>Provider: ${provider} Packagenumber: ${pkgnumber}</div>
 </div>
-
-<div id="dialog" title="Dialog Title">
-  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-</div>
-
 </script>
 
 <script type="text/javascript">
@@ -171,36 +202,22 @@ $( "#launchButton" ).button();
             { id:"3", botname:"SoftKing", serverName: "irc.abandoned-irc.net", channels: ["#xdcc"] },
         ];
         var results = [
-          {filename: "foobar", filesize:"1.4G", network:"foobar", channel:"#adsf", provider:"mephisto", pkgnumber:"123"}
+          {id: 1, filename: "foobar", filesize:"1.4G", network:"foobar", channel:"#adsf", provider:"mephisto", pkgnumber:"123"},
+          {id: 2, filename: "barfoo", filesize:"1G", network:"foobar", channel:"#adsf", provider:"mephisto", pkgnumber:"123"},
         ];
         $("#botTemplateTab").tmpl(bots).appendTo(ul);
         $("#botTemplate").tmpl(bots).appendTo(tabs); 
         $("#serachResultTemplate").tmpl(results).appendTo("#searchResult");
         tabs.tabs( "refresh" );
         updateProgressbars(bots);
-        $( "#dialog" ).dialog({
-          autoOpen: false,
-          width: 400,
-          buttons: [
-            {
-              text: "Ok",
-              click: function() {
-                $( this ).dialog( "close" );
-              }
-            },
-            {
-              text: "Cancel",
-              click: function() {
-                $( this ).dialog( "close" );
-              }
-            }
-          ]
-        });
-
-        // Link to open the dialog
-        $( "#dialog-link" ).click(function( event ) {
-          $( "#dialog" ).dialog( "open" );
-          event.preventDefault();
+        updateDialogs(results);
+        $(document).ready(function() {
+                $.ajax({
+                            url: "http://localhost:1984/test"
+                                    }).then(function(data) {
+                           $('#searchResult').append(bots[0].nick);
+                                  $('#searchResult').append(bots[0].server);
+                                      });
         });
 </script>
 </body>

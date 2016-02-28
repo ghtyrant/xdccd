@@ -53,6 +53,8 @@ void xdccd::API::run()
 
     auto settings = std::make_shared<restbed::Settings>();
     settings->set_port(1984);
+    //ONLY FOR TESTING PURPOSE
+    //settings->set_default_header("Access-Control-Allow-Origin", "*");
     settings->set_default_header("Connection", "close");
 
     service.publish(resource);
