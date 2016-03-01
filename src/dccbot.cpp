@@ -7,7 +7,8 @@
 #include "ircmessage.h"
 
 
-xdccd::DCCAnnounce::DCCAnnounce(const std::string &bot,
+xdccd::DCCAnnounce::DCCAnnounce(
+        const std::string &bot,
         const std::string &filename,
         const std::string &size,
         const std::string &slot,
@@ -15,13 +16,20 @@ xdccd::DCCAnnounce::DCCAnnounce(const std::string &bot,
     : hash(bot+slot), bot(bot), filename(filename), size(size), slot(slot), download_count(download_count)
 {}
 
-xdccd::DCCBot::DCCBot(ThreadpoolPtr threadpool, const std::string &host, const std::string &port, const std::string &nick, bool use_ssl)
-    : nickname(nick), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), use_ssl),
-    threadpool(threadpool)
+xdccd::DCCBot::DCCBot(bot_id_t id, ThreadpoolPtr threadpool, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl)
+    : id(id), last_file_id(0), nickname(nick), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), use_ssl),
+    threadpool(threadpool), channels_to_join(channels)
 {
+    std::string result = boost::algorithm::join(channels, ", ");
+    std::cout << "Started bot for '" << host << ":" << port << "', called '" << nick  << "', joining: " << result << std::endl;
     connection.write((boost::format("NICK %s") % nick).str());
     connection.write((boost::format("USER %s * * %s") % nick % nick).str());
-} 
+}
+
+xdccd::DCCBot::~DCCBot()
+{
+    std::cout << "Deleting bot '" << nickname << "'!" << std::endl;
+}
 
 void xdccd::DCCBot::read_handler(const std::string &message)
 {
@@ -94,7 +102,7 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
             std::cout << "DCC SEND request, offering file " << filename << " on ip " << addr.to_string() << ":" << port << std::endl;
 
             std::lock_guard<std::mutex> lock(files_lock);
-            std::shared_ptr<DCCFile> file(std::make_shared<DCCFile>(addr.to_string(), port, filename, std::strtoumax(size.c_str(), nullptr, 10)));
+            std::shared_ptr<DCCFile> file(std::make_shared<DCCFile>(last_file_id++, addr.to_string(), port, filename, std::strtoumax(size.c_str(), nullptr, 10)));
             files.push_back(file);
 
             threadpool->run_task(DCCReceiveTask(file));
@@ -107,11 +115,20 @@ void xdccd::DCCBot::run()
     connection.run();
 }
 
+void xdccd::DCCBot::stop()
+{
+    std::cout << "Disconnecting bot '" << nickname << "'!" << std::endl;
+    connection.close();
+}
+
 void xdccd::DCCBot::on_connected()
 {
     std::cout << "Connected!" << std::endl;
-    connection.write("JOIN #mg-chat");
-    connection.write("JOIN #moviegods");
+
+    for (auto channel_name : channels_to_join)
+        connection.write("JOIN " + channel_name);
+
+    channels_to_join.clear();
 }
 
 void xdccd::DCCBot::on_join(const std::string &channel)
@@ -143,7 +160,7 @@ void xdccd::DCCBot::on_privmsg(const xdccd::IRCMessage &msg)
     }
 }
 
-const std::vector<std::string> xdccd::DCCBot::get_channels() const
+const std::vector<std::string> &xdccd::DCCBot::get_channels() const
 {
     return channels;
 }
@@ -168,7 +185,7 @@ void xdccd::DCCBot::add_announce(const std::string &bot, const std::string &file
     DCCAnnouncePtr announce = std::make_shared<DCCAnnounce>(bot, filename, size, slot, download_count);
     announces[announce->hash] = announce;
 
-    std::cout << "[Bot Announce] Bot: " << bot
+    /*std::cout << "[Bot Announce] Bot: " << bot
         << ", File: " << filename
         << ", Size: " << size
         << " in slot #" << slot
@@ -177,6 +194,7 @@ void xdccd::DCCBot::add_announce(const std::string &bot, const std::string &file
         << "b, total size ~ " << sizeof(*announce) * announces.size() + sizeof(announces)
         << "b, announces: " << announces.size()
         << ")" << std::endl;
+        */
 }
 
 xdccd::DCCAnnouncePtr xdccd::DCCBot::get_announce(const std::string &hash) const
@@ -187,4 +205,14 @@ xdccd::DCCAnnouncePtr xdccd::DCCBot::get_announce(const std::string &hash) const
         return nullptr;
 
     return it->second;
+}
+
+const std::vector<xdccd::DCCFilePtr> &xdccd::DCCBot::get_files() const
+{
+    return files;
+}
+
+xdccd::bot_id_t xdccd::DCCBot::get_id() const
+{
+    return id;
 }
