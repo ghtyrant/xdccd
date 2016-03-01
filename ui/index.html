@@ -58,10 +58,10 @@
     <li><a href="#newbot">+</a></li>
   </ul>
   <div id="newbot">
-    <form>
-      Server: <input id="server">
-      Nick: <input id="nickname">
-      Channels: <input id="channels">
+    <form id="launchForm" action="">
+      Server: <input name="server">
+      Nick: <input name="nickname">
+      Channels: <input name="channels">
       <button id="launchButton" type="submit">Launch</button>
     </form>
   </div>
@@ -154,15 +154,29 @@ function updateDialogs(res)
   }
 }
 
-
-
 $( "#searchButton" ).button();
-$( "#launchButton" ).button();
+$( "#launchForm" ).submit(function() {
+  var data = $('#launchForm').serializeArray().reduce(function(m, o){ m[o.name] = o.value; return m;}, {});
+  data["channels"] = data["channels"].split(",");
+  console.log(data); 
+  $.ajax( { 
+    url: "http://localhost:1984/connect",
+    type: "POST",
+    data: JSON.stringify(data), 
+    contentType: "application/json",
+    dataType: 'json',
+    success: function(){},
+    crossDomain: true
+  }); 
+
+  return false;
+});
 </script>
 
 <script id="botTemplate" type="text/x-jQuery-tmpl">
         <div id="bot${id}">
             <div>Server: ${serverName}</div><div>Channels: {{each channels}} ${$value} {{/each}}</div>
+            <div><button onClick="disconnect(${id})">Disconnect</button></div>
             {{if downloads }}
               {{each downloads}}
               <div><b>File:</b> ${$value.filename} <b>Size:</b> ${$value.filesize}</div>
@@ -196,7 +210,7 @@ $( "#launchButton" ).button();
 </script>
 
 <script type="text/javascript">
-        var bots = [
+        /*var bots = [
             { id:"1", botname:"foo", serverName: "abjects", channels: ["#x", "#y"], downloads:[{dlid:1, filename:"test.tar.gz", filesize:"234MB", transfered:30 }, {dlid:2, filename:"test.tar.gz", filesize:"234MB", transfered:40 }]},
             { id:"2", botname:"LeecherGod", serverName: "irc.alphairc.com", channels: ["#dude"], downloads:[{dlid:3, filename:"test.tar.gz", filesize:"234MB", transfered:10 }] },
             { id:"3", botname:"SoftKing", serverName: "irc.abandoned-irc.net", channels: ["#xdcc"] },
@@ -206,19 +220,25 @@ $( "#launchButton" ).button();
           {id: 2, filename: "barfoo", filesize:"1G", network:"foobar", channel:"#adsf", provider:"mephisto", pkgnumber:"123"},
         ];
         $("#botTemplateTab").tmpl(bots).appendTo(ul);
-        $("#botTemplate").tmpl(bots).appendTo(tabs); 
+        $("#botTemplate").tmpl(bots).appendTo(tabs);
         $("#searchResultTemplate").tmpl(results).appendTo("#searchResult");
         tabs.tabs( "refresh" );
         updateProgressbars(bots);
-        updateDialogs(results);
+        updateDialogs(results);*/
         $(document).ready(function() {
-                $.ajax({
-                            url: "http://localhost:1984/test"
-                                    }).then(function(data) {
-                           $('#searchResult').append(bots[0].nick);
-                                  $('#searchResult').append(bots[0].server);
-                                      });
+                $.ajax({ url: "http://localhost:1984/status"}).then(
+                    function(data) {
+                      $("#botTemplateTab").tmpl(data).appendTo(ul);
+                      $("#botTemplate").tmpl(data).appendTo(tabs);
+                      tabs.tabs( "refresh" );
+                      updateProgressbars(data);
+                    });
         });
+
+        function disconnect(id)
+        {
+          $.ajax({ url: "http://localhost:1984/disconnect/" + id }).then(function(data){ alert("disconnected!"); });
+        }
 </script>
 </body>
 </html>

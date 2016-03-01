@@ -14,10 +14,13 @@ class BotManager
         BotManager(std::size_t max_bots);
         void launch_bot(const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl);
         void run();
-        std::vector<DCCBotPtr> get_bots();
+        const std::vector<DCCBotPtr> &get_bots();
+        DCCBotPtr get_bot_by_id(bot_id_t id);
+        void stop_bot(DCCBotPtr bot);
 
     private:
         std::size_t max_bots;
+        std::size_t last_bot_id;
         ThreadpoolPtr threadpool;
         std::vector<DCCBotPtr> bots;
 };

@@ -16,7 +16,9 @@ class API
         BotManager &get_bot_manager();
 
         // Resource handlers
-        void test_handler(std::shared_ptr<restbed::Session> session);
+        void status_handler(std::shared_ptr<restbed::Session> session);
+        void connect_handler(std::shared_ptr<restbed::Session> session);
+        void disconnect_handler(std::shared_ptr<restbed::Session> session);
 
     private:
         BotManager manager;
