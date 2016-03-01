@@ -89,9 +89,9 @@ var availableServers = [
   "irc.criten.net",
   "irc.Priv8.jp",
   "irc.rizon.no",
-  "irc.​1andallirc.​net",
+  "irc.1andallirc.net",
   "irc.frozyn.net",
-  "irc.​mircphantom.​net",
+  "irc.mircphantom.net",
   "est.relaxedirc.net",
   "irc.Xerologic.net",
   "irc.zombiesec.net",
@@ -176,7 +176,7 @@ $( "#launchButton" ).button();
   <li><a href="#bot${id}">${botname}</a></li>
 </script>
 
-<script id="serachResultTemplate" type="text/x-jQuery-tmpl">
+<script id="searchResultTemplate" type="text/x-jQuery-tmpl">
   <div>
     <div style="float:left; margin: 0 auto;">
       File: ${filename} Size: ${filesize} 
@@ -207,7 +207,7 @@ $( "#launchButton" ).button();
         ];
         $("#botTemplateTab").tmpl(bots).appendTo(ul);
         $("#botTemplate").tmpl(bots).appendTo(tabs); 
-        $("#serachResultTemplate").tmpl(results).appendTo("#searchResult");
+        $("#searchResultTemplate").tmpl(results).appendTo("#searchResult");
         tabs.tabs( "refresh" );
         updateProgressbars(bots);
         updateDialogs(results);
