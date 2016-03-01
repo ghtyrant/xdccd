@@ -1,7 +1,7 @@
 #include "dccfile.h"
 
-xdccd::DCCFile::DCCFile(const std::string &ip, const std::string &port, const std::string &filename, std::uintmax_t size)
-    : ip(ip), port(port), filename(filename), size(size), received(0), transfer_started(false), path("downloads")
+xdccd::DCCFile::DCCFile(file_id_t id, const std::string &ip, const std::string &port, const std::string &filename, std::uintmax_t size)
+    : id(id), ip(ip), port(port), filename(filename), size(size), received(0), transfer_started(false), path("downloads")
 {
     path /= filename;
 }
