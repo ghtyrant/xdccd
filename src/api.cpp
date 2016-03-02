@@ -19,7 +19,7 @@ xdccd::BotManager &xdccd::API::get_bot_manager()
 
 void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
 {
-    Json::Value root;
+    Json::Value root(Json::ValueType::arrayValue);
 
     for(auto bot : manager.get_bots())
     {
