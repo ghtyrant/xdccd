@@ -160,6 +160,11 @@ void xdccd::DCCBot::on_privmsg(const xdccd::IRCMessage &msg)
     }
 }
 
+void xdccd::DCCBot::request_file(const std::string &nick, const std::string &slot)
+{
+    connection.write((boost::format("PRIVMSG %s :xdcc send #%s") % nick % slot).str());
+}
+
 const std::vector<std::string> &xdccd::DCCBot::get_channels() const
 {
     return channels;

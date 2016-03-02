@@ -41,6 +41,7 @@ class DCCBot
         void on_join(const std::string &channel);
         void on_part(const std::string &channel);
         void on_privmsg(const xdccd::IRCMessage &msg);
+        void request_file(const std::string &nick, const std::string &slot);
         const std::vector<std::string> &get_channels() const;
         const std::string &get_nickname() const;
         const std::string &get_host() const;
