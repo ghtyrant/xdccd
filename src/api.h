@@ -19,6 +19,7 @@ class API
         void status_handler(std::shared_ptr<restbed::Session> session);
         void connect_handler(std::shared_ptr<restbed::Session> session);
         void disconnect_handler(std::shared_ptr<restbed::Session> session);
+        void request_file_handler(std::shared_ptr<restbed::Session> session);
 
     private:
         BotManager manager;
