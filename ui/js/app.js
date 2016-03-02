@@ -1,4 +1,4 @@
-var app = angular.module("streamApp", ['ui.bootstrap']);
+var app = angular.module("xdccdApp", ['ui.bootstrap']);
 
 app.factory('apiService', function($http) {
   return {
@@ -30,6 +30,17 @@ app.controller('StatusCtrl', function($scope, $timeout, apiService) {
   $scope.getBots = function(){
     apiService.getBots().then(function(bots) {
       $scope.bots = bots;
+
+      var downloads = [];
+      for (var i = 0; i < bots.length; i++) {
+        for (var j = 0; j < bots[i].downloads.length; j++) {
+          var dl = bots[i].downloads[j];
+          dl["bot"] = bots[i];
+          downloads.push(dl);
+        }
+      }
+
+      $scope.downloads = downloads;
     });
   };
   // Function to replicate setInterval using $timeout service.
