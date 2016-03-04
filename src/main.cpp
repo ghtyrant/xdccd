@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     //bot.run();
 
     xdccd::API api;
-    api.get_bot_manager().launch_bot("irc.abjects.net", "6667", "bahs3b34d", { "#moviegods", "#mg-chat" }, false);
+    api.get_bot_manager().launch_bot("irc.abjects.net", "6667", "nnkh", { "#moviegods", "#mg-chat" }, false);
     api.run();
 
     std::cout << "Quitting ..." << std::endl;

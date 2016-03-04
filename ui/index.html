@@ -95,7 +95,27 @@
               <uib-tab index="0" heading="Static title">
 
                 <uib-tab-heading><i class="glyphicon glyphicon-tasks"></i> Bots</uib-tab-heading>
-
+                <div class="col-lg-12">
+                  <h4>Create bot</h4>
+                  <table class="table table-striped" id="cnt0">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Server</th>
+                        <th>Channels</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <form class="form-inline" ng-submit="on_launch()">
+                        <td><input type="text" class="form-control" id="botName" placeholde="#name"></td>
+                        <td><input type="text" class="form-control" id="Server" placeholder="#server"></td>
+                        <td><input type="text" class="form-control" id="channels" placeholder="#channels"></td>
+                        <td><button type="submit" class="btn btn-default btn-s">Launch</button></td>
+                      </form>
+                    </tbody>
+                  </table>
+                </div>
                 <div class="col-lg-12" ng-controller="StatusCtrl">
                   <h2>Connected bots</h2>
                   <i ng-show="!bots.length">No bots connected!</i>

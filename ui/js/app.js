@@ -101,10 +101,15 @@ app.controller('BotContextCtrl', function($scope, $uibModal, apiService) {
     });
   };
 
+  $scope.on_launch = function()
+  {
+    console.log("foobar");
+  };
+
   $scope.disconnect = function(bot)
   {
     apiService.disconnect(bot.id);
-  }
+  };
 });
 
 app.controller('JoinChannelModalCtrl', function ($scope, $uibModalInstance, apiService, bot) {
@@ -112,7 +117,7 @@ app.controller('JoinChannelModalCtrl', function ($scope, $uibModalInstance, apiS
 
   $scope.on_submit = function () {
     apiService.joinChannel($scope.channel);
-  }
+  };
 
   $scope.ok = function () {
     $uibModalInstance.close();
