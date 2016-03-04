@@ -18,7 +18,7 @@ xdccd::DCCAnnounce::DCCAnnounce(
 
 bool xdccd::DCCAnnounce::compare(const std::string &other) const
 {
-    return boost::algorithm::contains(filename, other);
+    return boost::algorithm::icontains(filename, other);
 }
 
 xdccd::DCCBot::DCCBot(bot_id_t id, ThreadpoolPtr threadpool, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl)
