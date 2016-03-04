@@ -212,7 +212,8 @@
               <uib-tab index="2">
                 <uib-tab-heading><i class="glyphicon glyphicon-search"></i> Search</uib-tab-heading>
                 <div class="col-lg-12" ng-controller="SearchCtrl">
-                  <h2>Search</h2>
+                  <div class="row">
+                    <h2>Search</h2>
                   <form class="form-inline">
                     <table class="table table-striped" id="cnt0">
                       <thead>
@@ -227,24 +228,32 @@
                       </tbody>
                     </table>
                   </form>
-                </div>
-                <div class="col-lg-12" ng-controller="SearchCtrl">
+                  </div>
+                <div class="row">
                   <i ng-show="!search.length">No search Results</i>
                   <table class="table table-striped" id="cnt1" ng-hide="!search.length">
                     <thead>
                           <tr>
-                              <th>#</th>
-                              <th>Name</th>
-                              <th>Server</th>
-                              <th>Channel</th>
-                              <th>Add</th>
+                              <th>Bot id</th>
+                              <th>Botname</th>
+                              <th>Filename</th>
+                              <th>Size</th>
+                              <th>Slot</th>
+                              <th>Download count</th>
                           </tr>
                       </thead>
                       <tbody>
                           <tr ng-repeat="res in search">
+                            <td>{{ res.bot_id }}</td>
+                            <td>{{ res.bot }}</td>
+                            <td>{{ res.name }}</td>
+                            <td>{{ res.size }}</td>
+                            <td>{{ res.slot }}</td>
+                            <td>{{ res.download_count }}</td>
                           </tr>
                   </table>
                 </div>
+              </div>
               </uib-tab>
 
               <uib-tab index="3">
