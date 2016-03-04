@@ -164,45 +164,57 @@ void xdccd::API::search_handler(std::shared_ptr<restbed::Session> session)
 {
     const auto request = session->get_request();
 
-    /*Json::Value root(Json::ValueType::arrayValue);
+    int content_length = 0;
+    request->get_header("Content-Length", content_length);
 
-    for(auto bot : manager.get_bots())
+    session->fetch(content_length, [this](const std::shared_ptr<restbed::Session> session, const restbed::Bytes& body)
     {
-        Json::Value child;
-        child["id"] = static_cast<Json::UInt64>(bot->get_id());
-        child["botname"] = bot->get_nickname();
-        child["host"] = bot->get_host() + ":" + bot->get_port();
-        child["announces"] = static_cast<Json::UInt64>(bot->get_announces().size());
+        // Parse request
+        Json::Value search_request;
+        Json::Reader reader;
 
-        for (auto channel_name : bot->get_channels())
+        std::string data(body.begin(), body.end());
+
+        if (!reader.parse(data.c_str(), search_request))
         {
-            child["channels"].append(channel_name);
+            session->close(restbed::UNPROCESSABLE_ENTITY);
+            return;
         }
 
-        child["downloads"].resize(0);
-        for (auto file : bot->get_files())
+        if (!search_request.isMember("query") || search_request["query"].asString().empty())
         {
-            Json::Value file_child;
-            file_child["id"] = static_cast<Json::UInt64>(file->id);
-            file_child["filename"] = file->filename;
-            file_child["filesize"] = static_cast<Json::UInt64>(file->size);
-            file_child["received"] = static_cast<Json::UInt64>(file->received);
-            file_child["state"] = file->state;
-            float received_percent = ((float)file->received / (float)file->size) * 100.0f;
-            file_child["received_percent"] = received_percent;
-
-            child["downloads"].append(file_child);
+            session->close(restbed::UNPROCESSABLE_ENTITY);
+            return;
         }
 
-        root.append(child);
-    }
+        // Build response
+        Json::Value root(Json::ValueType::arrayValue);
+        
+        for (auto bot : manager.get_bots())
+        {
+            std::vector<xdccd::DCCAnnouncePtr> results;
+            bot->find_announces(search_request["query"].asString(), results);
 
-    std::ostringstream oss;
-    oss << root;
+            std::cout << "Searching for '" << search_request["query"].asString() << "' in bot " << bot->get_id() << " yields " << results.size() << " results." << std::endl;
 
-    std::string result = oss.str();
+            for (auto announce : results)
+            {
+                Json::Value child;
+                child["bot_id"] = static_cast<Json::UInt64>(bot->get_id());
+                child["name"] = announce->filename;
+                child["size"] = announce->size;
+                child["download_count"] = announce->download_count;
+                child["bot"] = announce->bot;
+                child["slot"] = announce->slot;
+                root.append(child);
+            }
+        }
 
-    session->close(restbed::OK, result, { { "Content-Length", std::to_string(result.size()) }, { "Content-Type", "application/json" } });*/
+        std::ostringstream oss;
+        oss << root;
+        std::string result = oss.str();
+        session->close(restbed::OK, result, { { "Content-Length", std::to_string(result.size()) }, { "Content-Type", "application/json" } });
+    });
 }
 
 
@@ -239,7 +251,8 @@ void xdccd::API::run()
     // Search
     resource = std::make_shared<restbed::Resource>();
     resource->set_path("/search");
-    resource->set_method_handler("GET", { { "Content-Type", "application/json" } }, std::bind(&API::search_handler, this, std::placeholders::_1));
+    resource->set_method_handler("POST", { { "Content-Type", "application/json" } }, std::bind(&API::search_handler, this, std::placeholders::_1));
+    resource->set_method_handler("OPTIONS", [](std::shared_ptr<restbed::Session> session) { session->close(restbed::OK, ""); } );
     service.publish(resource);
 
     // Request File
