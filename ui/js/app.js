@@ -156,3 +156,11 @@ app.controller('FileRequestModalCtrl', function ($scope, $uibModalInstance, apiS
     $uibModalInstance.dismiss('cancel');
   };
 });
+
+app.controller('SearchCtrl', function($scope, apiService){
+  $scope.search = [];
+  $scope.on_search = function(query) {
+    console.log("search: "+ query);
+  };
+
+});
