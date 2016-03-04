@@ -14,6 +14,19 @@ app.factory('apiService', function($http) {
     joinChannel: function(bot_id, channel) {
 
     },
+
+    createBot: function(bot, channels)
+    {
+      bot.channels = channels.split(",");
+      $http({
+        method: 'POST',
+        url: 'http://localhost:1984/connect/',
+        data: JSON.stringify(bot),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+    },
     requestFile: function(bot_id, nick, slot) {
       $http({
         method: 'POST',
@@ -101,9 +114,9 @@ app.controller('BotContextCtrl', function($scope, $uibModal, apiService) {
     });
   };
 
-  $scope.on_launch = function()
+  $scope.on_launch = function(bot, channels)
   {
-    console.log("foobar");
+    apiService.createBot(bot, channels);
   };
 
   $scope.disconnect = function(bot)
