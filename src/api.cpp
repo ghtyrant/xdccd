@@ -33,6 +33,7 @@ void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
             child["channels"].append(channel_name);
         }
 
+        child["downloads"].resize(0);
         for (auto file : bot->get_files())
         {
             Json::Value file_child;
