@@ -225,14 +225,14 @@
                           </thead>
                           <tbody>
                             <td><input type="text" class="form-control" id="queryString" placeholder="Search..." ng-model="query"></td>
-                            <td><button type="submit" class="btn btn-default btn-s" ng-click="on_search(query)">Search</button></td>
+                            <td><button type="submit" class="btn btn-default btn-s" ng-click="on_search(query, 0)">Search</button></td>
                           </tbody>
                         </table>
                       </form>
                   </div>
                   <div class="row">
-                    <i ng-show="!search.length">No search Results</i>
-                    <table class="table table-striped" id="cnt1" ng-hide="!search.length">
+                    <i ng-show="!search.results.length">No search Results</i>
+                    <table class="table table-striped" id="cnt1" ng-hide="!search.results.length">
                       <thead>
                             <tr>
                                 <th>Filename</th>
@@ -242,13 +242,16 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr ng-repeat="res in search">
+                            <tr ng-repeat="res in search.results">
                               <td>{{ res.name }}</td>
                               <td>{{ res.size }}</td>
                               <td>{{ res.download_count }}x</td>
                               <td><button class="btn btn-default btn-xs" ng-click="add_download(res)"><i class="glyphicon glyphicon-shopping-cart" ></i></button></td>
                             </tr>
                     </table>
+                     <ul class="pagination" ng-hide="!search.results.length">
+                      <li ng-repeat="i in get_paginations(search.total_results) track by $index" ng-class="{'active': search.start/25 == $index }"><a href="#" ng-click="on_search(query, $index*25)">{{ $index+1 }}</a></li>
+                    </ul>
                 </div>
               </div>
               </uib-tab>

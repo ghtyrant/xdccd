@@ -28,12 +28,12 @@ app.factory('apiService', function($http) {
       })
     },
 
-    searchFile: function(query)
+    searchFile: function(query, start)
     {
       return $http({
         method: 'POST',
         url: 'http://localhost:1984/search/',
-        data: JSON.stringify({query: query}),
+        data: JSON.stringify({query: query, start: start}),
         headers: {
           'Content-Type': 'application/json'
         }
@@ -210,11 +210,20 @@ app.controller('FileRequestModalCtrl', function ($scope, $uibModalInstance, apiS
 
 app.controller('SearchCtrl', function($scope, apiService){
   $scope.search = [];
-  $scope.on_search = function(query) {
-    apiService.searchFile(query).then(function(result) { $scope.search = result });;
+  $scope.on_search = function(query, start) {
+    apiService.searchFile(query, start).then(function(result) { $scope.search = result });;
   };
   
   $scope.add_download = function(request) {
     apiService.requestFile(request.bot_id, request.bot, request.slot);
+  };
+
+  $scope.get_paginations = function(results) {
+    if(results != null)
+    {
+      x = new Array(Math.floor(results/25) + (results % 25)); 
+      console.log(x);
+      return x;
+    }
   };
 });
