@@ -16,6 +16,11 @@ xdccd::DCCAnnounce::DCCAnnounce(
     : hash(bot+slot), bot(bot), filename(filename), size(size), slot(slot), download_count(download_count)
 {}
 
+bool xdccd::DCCAnnounce::compare(const std::string &other) const
+{
+    return boost::algorithm::contains(filename, other);
+}
+
 xdccd::DCCBot::DCCBot(bot_id_t id, ThreadpoolPtr threadpool, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl)
     : id(id), last_file_id(0), nickname(nick), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), use_ssl),
     threadpool(threadpool), channels_to_join(channels)
@@ -81,11 +86,13 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
     {
         if (msg.ctcp_params[0] == "SEND")
         {
+            bool active = true;
             std::string filename = msg.ctcp_params[1];
             std::string ip = msg.ctcp_params[2];
             std::string port = msg.ctcp_params[3];
             std::string size = msg.ctcp_params[4];
 
+            // Check if we got an IPv6 or v4 address
             boost::asio::ip::address addr;
             if (ip.find(':') != std::string::npos)
             {
@@ -99,13 +106,40 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
                 addr = boost::asio::ip::address(tmp);
             }
 
+            // Other side wants to initiate passive DCC
+            if (port == "0")
+            {
+                active = false;
+
+                // We have to send a DCC SEND request back, containing our IP address
+                // DCC SEND <filename> <ip> <port> <filesize> <token> 
+                connection.write((boost::format("PRIVMSG %s :" "\x01" "DCC SEND %s %s %s %s\x01") 
+                            % msg.nickname
+                            % filename
+                            % connection.get_local_ip()
+                            % "12345"
+                            % size).str());
+            }
+
             std::cout << "DCC SEND request, offering file " << filename << " on ip " << addr.to_string() << ":" << port << std::endl;
 
             std::lock_guard<std::mutex> lock(files_lock);
-            std::shared_ptr<DCCFile> file(std::make_shared<DCCFile>(last_file_id++, addr.to_string(), port, filename, std::strtoumax(size.c_str(), nullptr, 10)));
-            files.push_back(file);
+            std::shared_ptr<DCCFile> file_ptr = nullptr;
 
-            threadpool->run_task(DCCReceiveTask(file));
+            // Check if we are expecting the incoming file
+            for(auto file : files)
+                if (file->bot == msg.nickname && file->filename == filename && file->state == xdccd::FileState::AWAITING_CONNECTION)
+                    file_ptr = file;
+
+            // If not, add it anyway and wait for user interaction
+            if (file_ptr == nullptr)
+            {
+                file_ptr = std::make_shared<DCCFile>(last_file_id++, msg.nickname, addr.to_string(), port, filename, std::strtoumax(size.c_str(), nullptr, 10));
+                file_ptr->state = xdccd::FileState::AWAITING_RESPONSE;
+                files.push_back(file_ptr);
+            }
+
+            threadpool->run_task(DCCReceiveTask(file_ptr, active));
         }
     }
 }
@@ -163,6 +197,7 @@ void xdccd::DCCBot::on_privmsg(const xdccd::IRCMessage &msg)
 void xdccd::DCCBot::request_file(const std::string &nick, const std::string &slot)
 {
     connection.write((boost::format("PRIVMSG %s :xdcc send #%s") % nick % slot).str());
+
 }
 
 const std::vector<std::string> &xdccd::DCCBot::get_channels() const
@@ -212,9 +247,23 @@ xdccd::DCCAnnouncePtr xdccd::DCCBot::get_announce(const std::string &hash) const
     return it->second;
 }
 
+void xdccd::DCCBot::find_announces(const std::string &query, std::vector<DCCAnnouncePtr> &result) const
+{
+    for (auto announce : announces)
+    {
+        if (announce.second->compare(query))
+            result.push_back(announce.second);
+    }
+}
+
 const std::vector<xdccd::DCCFilePtr> &xdccd::DCCBot::get_files() const
 {
     return files;
+}
+
+const std::map<std::string, xdccd::DCCAnnouncePtr> &xdccd::DCCBot::get_announces() const
+{
+    return announces;
 }
 
 xdccd::bot_id_t xdccd::DCCBot::get_id() const

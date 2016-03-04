@@ -27,6 +27,7 @@ void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
         child["id"] = static_cast<Json::UInt64>(bot->get_id());
         child["botname"] = bot->get_nickname();
         child["host"] = bot->get_host() + ":" + bot->get_port();
+        child["announces"] = static_cast<Json::UInt64>(bot->get_announces().size());
 
         for (auto channel_name : bot->get_channels())
         {
@@ -41,6 +42,7 @@ void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
             file_child["filename"] = file->filename;
             file_child["filesize"] = static_cast<Json::UInt64>(file->size);
             file_child["received"] = static_cast<Json::UInt64>(file->received);
+            file_child["state"] = file->state;
             float received_percent = ((float)file->received / (float)file->size) * 100.0f;
             file_child["received_percent"] = received_percent;
 
@@ -158,6 +160,51 @@ void xdccd::API::request_file_handler(std::shared_ptr<restbed::Session> session)
     } );
 }
 
+void xdccd::API::search_handler(std::shared_ptr<restbed::Session> session)
+{
+    const auto request = session->get_request();
+
+    /*Json::Value root(Json::ValueType::arrayValue);
+
+    for(auto bot : manager.get_bots())
+    {
+        Json::Value child;
+        child["id"] = static_cast<Json::UInt64>(bot->get_id());
+        child["botname"] = bot->get_nickname();
+        child["host"] = bot->get_host() + ":" + bot->get_port();
+        child["announces"] = static_cast<Json::UInt64>(bot->get_announces().size());
+
+        for (auto channel_name : bot->get_channels())
+        {
+            child["channels"].append(channel_name);
+        }
+
+        child["downloads"].resize(0);
+        for (auto file : bot->get_files())
+        {
+            Json::Value file_child;
+            file_child["id"] = static_cast<Json::UInt64>(file->id);
+            file_child["filename"] = file->filename;
+            file_child["filesize"] = static_cast<Json::UInt64>(file->size);
+            file_child["received"] = static_cast<Json::UInt64>(file->received);
+            file_child["state"] = file->state;
+            float received_percent = ((float)file->received / (float)file->size) * 100.0f;
+            file_child["received_percent"] = received_percent;
+
+            child["downloads"].append(file_child);
+        }
+
+        root.append(child);
+    }
+
+    std::ostringstream oss;
+    oss << root;
+
+    std::string result = oss.str();
+
+    session->close(restbed::OK, result, { { "Content-Length", std::to_string(result.size()) }, { "Content-Type", "application/json" } });*/
+}
+
 
 void xdccd::API::run()
 {
@@ -187,6 +234,12 @@ void xdccd::API::run()
     resource = std::make_shared<restbed::Resource>();
     resource->set_path("/disconnect/{id: [0-9]+}");
     resource->set_method_handler("GET", { { "Content-Type", "application/json" } }, std::bind(&API::disconnect_handler, this, std::placeholders::_1));
+    service.publish(resource);
+
+    // Search
+    resource = std::make_shared<restbed::Resource>();
+    resource->set_path("/search");
+    resource->set_method_handler("GET", { { "Content-Type", "application/json" } }, std::bind(&API::search_handler, this, std::placeholders::_1));
     service.publish(resource);
 
     // Request File

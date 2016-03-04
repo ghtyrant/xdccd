@@ -16,12 +16,15 @@ class IRCMessage;
 struct DCCAnnounce
 {
     DCCAnnounce(const std::string &bot, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count);
+
     std::string hash;
     std::string bot;
     std::string filename;
     std::string size;
     std::string slot;
     std::string download_count;
+
+    bool compare(const std::string &other) const;
 };
 
 typedef std::shared_ptr<DCCAnnounce> DCCAnnouncePtr;
@@ -47,6 +50,8 @@ class DCCBot
         const std::string &get_host() const;
         const std::string &get_port() const;
         const std::vector<DCCFilePtr> &get_files() const;
+        const std::map<std::string, DCCAnnouncePtr> &get_announces() const;
+        void find_announces(const std::string &query, std::vector<DCCAnnouncePtr> &result) const;
         bot_id_t get_id() const;
 
     private:
