@@ -129,7 +129,13 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
             // Check if we are expecting the incoming file
             for(auto file : files)
                 if (file->bot == msg.nickname && file->filename == filename && file->state == xdccd::FileState::AWAITING_CONNECTION)
+                {
                     file_ptr = file;
+                    file_ptr->ip = addr.to_string();
+                    file_ptr->port = port;
+                    file_ptr->size = std::strtoumax(size.c_str(), nullptr, 10);
+                    break;
+                }
 
             // If not, add it anyway and wait for user interaction
             if (file_ptr == nullptr)
@@ -198,6 +204,14 @@ void xdccd::DCCBot::request_file(const std::string &nick, const std::string &slo
 {
     connection.write((boost::format("PRIVMSG %s :xdcc send #%s") % nick % slot).str());
 
+    // Check if we already discovered the file the user wants to download
+    DCCAnnouncePtr announce = get_announce(nick + slot);
+
+    if (!announce)
+        return;
+
+    // Yes, we have it, let's create the DCCFile for it now
+    DCCFilePtr file_ptr = std::make_shared<DCCFile>(last_file_id++, nick, "", "", announce->filename, 0);
 }
 
 const std::vector<std::string> &xdccd::DCCBot::get_channels() const
