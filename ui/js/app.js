@@ -39,7 +39,7 @@ app.factory('apiService', function($http) {
         }
       }).then(function(result) {
         return result.data;
-      })
+      });
     },
 
     requestFile: function(bot_id, nick, slot) {
@@ -175,7 +175,7 @@ app.controller('FileRequestModalCtrl', function ($scope, $uibModalInstance, apiS
 app.controller('SearchCtrl', function($scope, apiService){
   $scope.search = [];
   $scope.on_search = function(query) {
-    $scope.search = apiService.searchFile(query);
+    apiService.searchFile(query).then(function(result) { $scope.search = result });;
   };
 
 });
