@@ -54,7 +54,7 @@ app.factory('apiService', function($http) {
   }
 });
 
-app.controller('StatusCtrl', function($scope, $timeout, apiService) {
+app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService) {
   $scope.getBots = function(){
     apiService.getBots().then(function(bots) {
       $scope.bots = bots;
@@ -71,12 +71,48 @@ app.controller('StatusCtrl', function($scope, $timeout, apiService) {
       $scope.downloads = downloads;
     });
   };
+
+  $scope.cancelDownload = function(file)
+  {
+    console.log("To be implemented");
+  };
+
+  $scope.removeFromList = function(file)
+  {
+    console.log("To be implemented");
+  };
+
+  $scope.removeFromDisk = function(file)
+  {
+    console.log("To be implemented");
+  };
+
   // Function to replicate setInterval using $timeout service.
-  $scope.intervalFunction = function(){
+  /*$scope.intervalFunction = function(){
     $timeout(function() {
       $scope.getBots();
       $scope.intervalFunction();
     }, 3000)
+  };
+  */
+  $scope.intervalFunction = function()
+  {
+    $interval(function(){
+    apiService.getBots().then(function(bots) {
+      $scope.bots = bots;
+
+      var downloads = [];
+      for (var i = 0; i < bots.length; i++) {
+        for (var j = 0; j < bots[i].downloads.length; j++) {
+          var dl = bots[i].downloads[j];
+          dl["bot"] = bots[i];
+          downloads.push(dl);
+        }
+      }
+
+      $scope.downloads = downloads;
+    });
+  },3000)
   };
 
   $scope.getBots();

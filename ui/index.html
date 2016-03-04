@@ -65,8 +65,8 @@
                   </form>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-default" type="button" ng-click="ok()">Join</button>
-                    <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
+                    <button class="btn btn-warning" type="button" ng-click="ok()">Join</button>
+                    <button class="btn btn-default" type="button" ng-click="cancel()">Cancel</button>
                 </div>
             </script>
 
@@ -84,8 +84,8 @@
                   </form>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-default" type="button" ng-click="ok()">Request</button>
-                    <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
+                    <button class="btn btn-warning" type="button" ng-click="ok()">Request</button>
+                    <button class="btn btn-default" type="button" ng-click="cancel()">Cancel</button>
                 </div>
             </script>
 
@@ -198,8 +198,9 @@
                                       <i class="glyphicon glyphicon-cog"></i> <span class="caret"></span>
                                     </button>
                                     <ul class="dropdown-menu">
-                                      <li><a href="#" ng-click="" ng-if="file.received < file.size">Cancel</a></li>
-                                      <li><a href="#" ng-click="" ng-if="file.received == file.size">Delete file</a></li>
+                                      <li><a href="#" ng-click="cancelDownload(file)" ng-if="file.state == 2 || file.state == 0 || file.state == 1">Cancel</a></li>
+                                      <li><a href="#" ng-click="removeFromList(file)" ng-if="file.state == 3 || file.state == 4">Delete from list</a></li>
+                                      <li><a href="#" ng-click="removeFromDisk(file)" ng-if="file.state == 3 || file.state == 4">Delete from disk</a></li>
                                     </ul>
                                   </div>
                                 </td>
