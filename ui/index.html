@@ -140,7 +140,7 @@
                               <td>{{ bot.botname }}</td>
                               <td>{{ bot.host }}</td>
                               <td>{{ bot.channels.join(', ') }}</td>
-                              <td>0</td>
+                              <td>{{ bot.announces }}</td>
                               <td>
                                 <div class="btn-group">
                                   <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -213,13 +213,13 @@
                 <uib-tab-heading><i class="glyphicon glyphicon-search"></i> Search</uib-tab-heading>
               </uib-tab>
 
-            <uib-tab index="3">
-              <uib-tab-heading><i class="glyphicon glyphicon-info-sign"></i> Status</uib-tab-heading>
-              <div class="col-lg-12">
-                <h1>Status</h1>
-                <p>Disk usage, total transmitted bytes, version, ...</p>
-              </div>
-            </uib-tab>
+              <uib-tab index="3">
+                <uib-tab-heading><i class="glyphicon glyphicon-info-sign"></i> Status</uib-tab-heading>
+                <div class="col-lg-12">
+                  <h1>Status</h1>
+                  <p>Disk usage, total transmitted bytes, version, ...</p>
+                </div>
+              </uib-tab>
             </uib-tabset>
           </div>
         </div>
