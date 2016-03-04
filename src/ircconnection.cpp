@@ -112,3 +112,8 @@ const std::string &xdccd::IRCConnection::get_port() const
     return port;
 }
 
+std::string xdccd::IRCConnection::get_local_ip() const
+{
+    return socket->get_address();
+}
+

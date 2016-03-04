@@ -24,6 +24,7 @@ class IRCConnection
         void set_write_handler(const write_handler_t &handler);
         const std::string &get_host() const;
         const std::string &get_port() const;
+        std::string get_local_ip() const;
 
     private:
         std::string host;
