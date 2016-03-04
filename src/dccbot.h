@@ -9,16 +9,17 @@
 namespace xdccd
 {
 
-class IRCConnection;
 class IRCMessage;
 
+typedef std::size_t bot_id_t;
 
 struct DCCAnnounce
 {
-    DCCAnnounce(const std::string &bot, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count);
+    DCCAnnounce(bot_id_t bot_id, const std::string &bot_name, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count);
 
+    bot_id_t bot_id;
     std::string hash;
-    std::string bot;
+    std::string bot_name;
     std::string filename;
     std::string size;
     std::string slot;
@@ -28,8 +29,6 @@ struct DCCAnnounce
 };
 
 typedef std::shared_ptr<DCCAnnounce> DCCAnnouncePtr;
-
-typedef std::size_t bot_id_t;
 
 class DCCBot
 {

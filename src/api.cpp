@@ -4,6 +4,7 @@
 #include <json/json.h>
 
 #include "api.h"
+#include "searchcache.h"
 
 using namespace std::placeholders;
 
@@ -187,28 +188,33 @@ void xdccd::API::search_handler(std::shared_ptr<restbed::Session> session)
             return;
         }
 
+        std::size_t start = 0;
+        if (search_request.isMember("start"))
+            start = search_request["start"].asUInt64();
+
         // Build response
-        Json::Value root(Json::ValueType::arrayValue);
+        Json::Value root;
         
-        for (auto bot : manager.get_bots())
+        xdccd::SearchResultPtr sr = xdccd::SearchCache::get_instance().search(manager, search_request["query"].asString(), start);
+        std::cout << "Searching for '" << search_request["query"].asString() << "' yields " << sr->total_results << " results, starting with " << sr->result_start << std::endl;
+
+        root["total_results"] = static_cast<Json::UInt64>(sr->total_results);
+        root["start"] = static_cast<Json::UInt64>(sr->result_start);
+
+        Json::Value result_list(Json::ValueType::arrayValue);
+        for (auto announce : sr->announces)
         {
-            std::vector<xdccd::DCCAnnouncePtr> results;
-            bot->find_announces(search_request["query"].asString(), results);
-
-            std::cout << "Searching for '" << search_request["query"].asString() << "' in bot " << bot->get_id() << " yields " << results.size() << " results." << std::endl;
-
-            for (auto announce : results)
-            {
-                Json::Value child;
-                child["bot_id"] = static_cast<Json::UInt64>(bot->get_id());
-                child["name"] = announce->filename;
-                child["size"] = announce->size;
-                child["download_count"] = announce->download_count;
-                child["bot"] = announce->bot;
-                child["slot"] = announce->slot;
-                root.append(child);
-            }
+            Json::Value child;
+            child["bot_id"] = static_cast<Json::UInt64>(announce->bot_id);
+            child["name"] = announce->filename;
+            child["size"] = announce->size;
+            child["download_count"] = announce->download_count;
+            child["bot"] = announce->bot_name;
+            child["slot"] = announce->slot;
+            result_list.append(child);
         }
+
+        root["results"] = result_list;
 
         std::ostringstream oss;
         oss << root;
