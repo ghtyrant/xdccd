@@ -8,12 +8,13 @@
 
 
 xdccd::DCCAnnounce::DCCAnnounce(
-        const std::string &bot,
+        xdccd::bot_id_t bot_id,
+        const std::string &bot_name,
         const std::string &filename,
         const std::string &size,
         const std::string &slot,
         const std::string &download_count)
-    : hash(bot+slot), bot(bot), filename(filename), size(size), slot(slot), download_count(download_count)
+    : bot_id(bot_id), hash(bot_name+slot), bot_name(bot_name), filename(filename), size(size), slot(slot), download_count(download_count)
 {}
 
 bool xdccd::DCCAnnounce::compare(const std::string &other) const
@@ -236,7 +237,7 @@ const std::string &xdccd::DCCBot::get_port() const
 
 void xdccd::DCCBot::add_announce(const std::string &bot, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count)
 {
-    DCCAnnouncePtr announce = std::make_shared<DCCAnnounce>(bot, filename, size, slot, download_count);
+    DCCAnnouncePtr announce = std::make_shared<DCCAnnounce>(id, bot, filename, size, slot, download_count);
     announces[announce->hash] = announce;
 
     /*std::cout << "[Bot Announce] Bot: " << bot
