@@ -234,22 +234,18 @@
                     <table class="table table-striped" id="cnt1" ng-hide="!search.length">
                       <thead>
                             <tr>
-                                <th>Bot id</th>
-                                <th>Botname</th>
                                 <th>Filename</th>
                                 <th>Size</th>
-                                <th>Slot</th>
-                                <th>Download count</th>
+                                <th>Downloaded</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr ng-repeat="res in search">
-                              <td>{{ res.bot_id }}</td>
-                              <td>{{ res.bot }}</td>
                               <td>{{ res.name }}</td>
                               <td>{{ res.size }}</td>
-                              <td>{{ res.slot }}</td>
-                              <td>{{ res.download_count }}</td>
+                              <td>{{ res.download_count }}x</td>
+                              <td><button class="btn btn-default btn-xs" ng-click="add_download(res)"><i class="glyphicon glyphicon-shopping-cart" ></i></button></td>
                             </tr>
                     </table>
                 </div>

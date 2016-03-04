@@ -177,5 +177,8 @@ app.controller('SearchCtrl', function($scope, apiService){
   $scope.on_search = function(query) {
     apiService.searchFile(query).then(function(result) { $scope.search = result });;
   };
-
+  
+  $scope.add_download = function(request) {
+    apiService.requestFile(request.bot_id, request.bot, request.slot);
+  };
 });
