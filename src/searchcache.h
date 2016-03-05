@@ -11,7 +11,11 @@
 namespace xdccd
 {
 
+namespace search
+{
 static const std::chrono::duration<double> MAX_CACHE_AGE(5 * 60);
+static const std::size_t RESULTS_PER_PAGE(25);
+}
 
 struct SearchResult
 {
@@ -47,7 +51,7 @@ class SearchCache
         SearchCache(SearchCache const&) = delete;
         void operator=(SearchCache const&) = delete;
 
-        SearchResultPtr search(BotManager &manager, const std::string &query, std::size_t start = 0);
+        SearchResultPtr search(BotManager &manager, const std::string &query, std::size_t start = 0, std::size_t limit = 25);
 
     private:
         SearchCache() {};

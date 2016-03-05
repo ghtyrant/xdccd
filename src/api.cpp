@@ -242,19 +242,25 @@ void xdccd::API::search_handler(std::shared_ptr<restbed::Session> session)
         if (search_request.isMember("start"))
             start = search_request["start"].asUInt64();
 
+        std::size_t limit = xdccd::search::RESULTS_PER_PAGE;
+        if (search_request.isMember("limit"))
+            limit = search_request["limit"].asUInt64();
+
         // Build response
         Json::Value root;
-        
-        xdccd::SearchResultPtr sr = xdccd::SearchCache::get_instance().search(manager, search_request["query"].asString(), start);
+
+        xdccd::SearchResultPtr sr = xdccd::SearchCache::get_instance().search(manager, search_request["query"].asString(), start, limit);
         std::cout << "Searching for '" << search_request["query"].asString() << "' yields " << sr->total_results << " results, starting with " << sr->result_start << std::endl;
 
         root["total_results"] = static_cast<Json::UInt64>(sr->total_results);
         root["start"] = static_cast<Json::UInt64>(sr->result_start);
 
         Json::Value result_list(Json::ValueType::arrayValue);
-        for (auto announce : sr->announces)
+        for (auto it = sr->begin; it != sr->end; ++it)
         {
             Json::Value child;
+            DCCAnnouncePtr announce = *it;
+
             child["bot_id"] = static_cast<Json::UInt64>(announce->bot_id);
             child["name"] = announce->filename;
             child["size"] = announce->size;

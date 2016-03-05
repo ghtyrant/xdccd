@@ -9,7 +9,7 @@ xdccd::CacheEntry::CacheEntry(const std::string &query, const std::vector<DCCAnn
     : query(query), announces(announces), created(std::chrono::system_clock::now())
 {}
 
-xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, const std::string &query, std::size_t start)
+xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, const std::string &query, std::size_t start, std::size_t limit)
 {
     std::lock_guard<std::mutex> lock(cache_lock);
 
@@ -19,13 +19,13 @@ xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, co
     if (cache_it != cache.end())
     {
         age = std::chrono::system_clock::now() - cache_it->second->created;
-        
+
         // Remove cache entries older than MAX_CACHE_AGE
-        if (age >= xdccd::MAX_CACHE_AGE)
+        if (age >= xdccd::search::MAX_CACHE_AGE)
         {
             std::cout << "Removing cached search result for '" << query << "' due to old age." << std::endl;
             cache.erase(cache_it);
-            cache_it = cache.end();    
+            cache_it = cache.end();
         }
     }
 
