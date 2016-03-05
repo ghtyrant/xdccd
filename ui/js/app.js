@@ -3,13 +3,13 @@ var app = angular.module("xdccdApp", ['ui.bootstrap']);
 app.factory('apiService', function($http) {
   return {
     getBots: function() {
-      return $http.get('http://localhost:1984/status')
+      return $http.get('/status')
         .then(function(result) {
           return result.data;
         });
     },
     disconnect: function(bot_id) {
-      $http.get('http://localhost:1984/disconnect/' + bot_id);
+      $http.get('/disconnect/' + bot_id);
     },
     joinChannel: function(bot_id, channel) {
 
@@ -20,7 +20,7 @@ app.factory('apiService', function($http) {
       bot.channels = channels.split(",");
       $http({
         method: 'POST',
-        url: 'http://localhost:1984/connect/',
+        url: '/connect/',
         data: JSON.stringify(bot),
         headers: {
           'Content-Type': 'application/json'
@@ -32,7 +32,7 @@ app.factory('apiService', function($http) {
     {
       return $http({
         method: 'POST',
-        url: 'http://localhost:1984/search/',
+        url: '/search/',
         data: JSON.stringify({query: query, start: start}),
         headers: {
           'Content-Type': 'application/json'
@@ -45,7 +45,7 @@ app.factory('apiService', function($http) {
     requestFile: function(bot_id, nick, slot) {
       $http({
         method: 'POST',
-        url: 'http://localhost:1984/bot/' + bot_id + '/request',
+        url: '/bot/' + bot_id + '/request',
         data: JSON.stringify({ nick: nick, slot: slot }),
         headers: {
           'Content-Type': 'application/json'
