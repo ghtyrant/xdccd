@@ -26,8 +26,6 @@ class Threadpool
         {
             io_service.stop();
 
-            BOOST_LOG_TRIVIAL(warning) << "Threadpool::~Threadpool()";
-
             try
             {
                 threads.join_all();

@@ -15,7 +15,6 @@ class IRCConnection
 {
     public:
         IRCConnection(const std::string &host, std::string port, const read_handler_t &read_handler, bool use_ssl);
-        ~IRCConnection();
         bool connect();
         void run();
         void read(const boost::system::error_code& error, std::size_t count);

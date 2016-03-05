@@ -11,12 +11,6 @@ xdccd::CacheEntry::CacheEntry(const std::string &query, const std::vector<DCCAnn
     : query(query), announces(announces), created(std::chrono::system_clock::now())
 {}
 
-xdccd::SearchCache::~SearchCache()
-{
-    BOOST_LOG_TRIVIAL(warning) << "SearchCache::~SearchCache()";
-    cache.clear();
-}
-
 xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, const std::string &query, std::size_t start, std::size_t limit)
 {
     std::lock_guard<std::mutex> lock(cache_lock);

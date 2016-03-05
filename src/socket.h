@@ -8,7 +8,7 @@ namespace xdccd
 class Socket
 {
     public:
-        virtual ~Socket() { BOOST_LOG_TRIVIAL(warning) << "Socket::~Socket()"; }
+        virtual ~Socket() {};
         virtual void connect(const boost::asio::ip::tcp::endpoint& endpoint, boost::system::error_code& error) = 0;
         virtual void close() = 0;
         virtual void async_read_until(boost::asio::streambuf& b, const std::string& delim, std::function<void(const boost::system::error_code&, std::size_t)> handle) = 0;

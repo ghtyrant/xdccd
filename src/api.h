@@ -15,7 +15,6 @@ class API
         static bool quit;
 
         API();
-        ~API();
         void run();
         void stop();
 

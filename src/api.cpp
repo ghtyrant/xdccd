@@ -21,11 +21,6 @@ xdccd::API::API()
 {
 }
 
-xdccd::API::~API()
-{
-    BOOST_LOG_TRIVIAL(warning) << "API::~API()";
-}
-
 xdccd::BotManager &xdccd::API::get_bot_manager()
 {
     return manager;

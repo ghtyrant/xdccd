@@ -35,11 +35,6 @@ xdccd::DCCBot::DCCBot(bot_id_t id, const std::string &host, const std::string &p
     BOOST_LOG_TRIVIAL(info) << "Started " << *this << " for '" << host << ":" << port << "', called '" << nick  << "', auto-joining: " << result;
 }
 
-xdccd::DCCBot::~DCCBot()
-{
-    BOOST_LOG_TRIVIAL(warning) << "DCCBot::~DCCBot()";
-}
-
 void xdccd::DCCBot::read_handler(const std::string &message)
 {
 
@@ -188,7 +183,7 @@ void xdccd::DCCBot::stop()
 {
     BOOST_LOG_TRIVIAL(info) << "Disconnecting bot " << *this;
     connection.write("QUIT :Bye");
-    //connection.close();
+    connection.close();
 }
 
 void xdccd::DCCBot::on_connected()

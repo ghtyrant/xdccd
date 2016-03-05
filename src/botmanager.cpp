@@ -8,8 +8,6 @@ xdccd::BotManager::BotManager(std::size_t max_bots)
 
 xdccd::BotManager::~BotManager()
 {
-    BOOST_LOG_TRIVIAL(warning) << "BotManager::~BotManager()";
-
     for (auto bot : bots)
         bot->stop();
 }

@@ -41,7 +41,6 @@ typedef std::unique_ptr<CacheEntry> CacheEntryPtr;
 class SearchCache
 {
     public:
-        ~SearchCache();
         SearchResultPtr search(BotManager &manager, const std::string &query, std::size_t start = 0, std::size_t limit = 25);
         void clear();
 

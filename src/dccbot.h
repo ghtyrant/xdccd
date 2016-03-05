@@ -35,7 +35,6 @@ class DCCBot : public Logable<DCCBot>
 {
     public:
         DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl);
-        ~DCCBot();
         void read_handler(const std::string &message);
         void run();
         void stop();

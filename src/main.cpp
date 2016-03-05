@@ -61,12 +61,10 @@ int main(int argc, char* argv[])
     BOOST_LOG_TRIVIAL(debug) << "Starting up xdccd!";
 
     std::signal(SIGINT, signal_handler);
-    xdccd::API *api = new xdccd::API();
+    xdccd::API api;
     //api.get_bot_manager().launch_bot("irc.abjects.net", "6667", "asjd72z", { "#moviegods", "#mg-chat" }, false);
-    api->get_bot_manager().launch_bot("localhost", "6667", "asjd72z", { "#moviegods", "#mg-chat" }, false);
-    api->run();
-
-    delete api;
+    api.get_bot_manager().launch_bot("localhost", "6667", "asjd72z", { "#moviegods", "#mg-chat" }, false);
+    api.run();
 
     BOOST_LOG_TRIVIAL(info) << "Quitting ...";
 

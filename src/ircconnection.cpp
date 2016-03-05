@@ -15,14 +15,6 @@ xdccd::IRCConnection::IRCConnection(const std::string &host, std::string port, c
     connect();
 }
 
-xdccd::IRCConnection::~IRCConnection()
-{
-    BOOST_LOG_TRIVIAL(warning) << "IRCConnection::~IRCConnection()";
-    close();
-    while (!io_service.stopped())
-    {}
-}
-
 bool xdccd::IRCConnection::connect()
 {
     boost::asio::ip::tcp::resolver resolver(io_service);
@@ -98,7 +90,6 @@ void xdccd::IRCConnection::write(const std::string &message)
 
 void xdccd::IRCConnection::close()
 {
-    BOOST_LOG_TRIVIAL(warning) << "IRCConnection::close()";
     socket->close();
 
     if (!io_service.stopped())
