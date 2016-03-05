@@ -276,6 +276,20 @@ const std::vector<xdccd::DCCFilePtr> &xdccd::DCCBot::get_files() const
     return files;
 }
 
+void xdccd::DCCBot::remove_file(file_id_t file_id)
+{
+    DCCFilePtr file_ptr = nullptr;
+    for(auto file : files)
+    {
+        if(file->id == file_id)
+        {
+            file_ptr = file;
+            break;
+        }    
+    }
+    files.erase(std::remove(files.begin(), files.end(), file_ptr)); 
+}
+
 const std::map<std::string, xdccd::DCCAnnouncePtr> &xdccd::DCCBot::get_announces() const
 {
     return announces;
