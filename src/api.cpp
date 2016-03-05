@@ -2,6 +2,7 @@
 #include <restbed>
 #include <functional>
 #include <json/json.h>
+#include <boost/algorithm/string.hpp>
 
 #include "api.h"
 #include "searchcache.h"
@@ -16,6 +17,37 @@ xdccd::API::API()
 xdccd::BotManager &xdccd::API::get_bot_manager()
 {
     return manager;
+}
+
+void xdccd::API::static_file_handler(std::shared_ptr<restbed::Session> session)
+{
+    const auto request = session->get_request();
+    const std::string filename = request->get_path_parameter("filename");
+    std::string base_path = "ui/";
+
+    if (boost::algorithm::starts_with(request->get_path(), "/js/"))
+        base_path += "js/";
+
+    std::ifstream stream(base_path + filename, std::ifstream::in);
+
+    if (stream.is_open())
+    {
+        const std::string body = std::string(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
+
+        std::string content_type = "text/html";
+        if (boost::algorithm::ends_with(filename, ".js"))
+            content_type = "application/javascript";
+
+        const std::multimap<std::string, std::string> headers
+        {
+            {"Content-Type", content_type},
+            {"Content-Length", std::to_string(body.length())}
+        };
+
+        session->close(restbed::OK, body, headers);
+    }
+    else
+        session->close(restbed::NOT_FOUND);
 }
 
 void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
@@ -235,8 +267,14 @@ void xdccd::API::run()
     settings->set_default_header("Access-Control-Allow-Headers", "Content-Type");
     settings->set_default_header("Connection", "close");
 
-    // Status
+    // Static Files
     auto resource = std::make_shared<restbed::Resource>();
+    resource->set_paths({ "/{filename: [a-z]*\\.html}", "/js/{filename: [a-z]*\\.js}" });
+    resource->set_method_handler("GET", std::bind(&API::static_file_handler, this, std::placeholders::_1));
+    service.publish(resource);
+
+    // Status
+    resource = std::make_shared<restbed::Resource>();
     resource->set_path("/status");
     resource->set_method_handler("GET", { { "Content-Type", "application/json" } }, std::bind(&API::status_handler, this, std::placeholders::_1));
     service.publish(resource);

@@ -15,6 +15,9 @@ class API
 
         BotManager &get_bot_manager();
 
+        // Static file handler
+        void static_file_handler(std::shared_ptr<restbed::Session> session);
+
         // Resource handlers
         void status_handler(std::shared_ptr<restbed::Session> session);
         void connect_handler(std::shared_ptr<restbed::Session> session);
