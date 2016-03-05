@@ -180,7 +180,7 @@ void xdccd::DCCBot::on_join(const std::string &channel)
 
 void xdccd::DCCBot::on_part(const std::string &channel)
 {
-    std::remove_if(channels.begin(), channels.end(), [channel](const std::string &name) { return name == channel; });
+    channels.erase(std::remove_if(channels.begin(), channels.end(), [channel](const std::string &name) { return name == channel; }));
 }
 
 void xdccd::DCCBot::on_privmsg(const xdccd::IRCMessage &msg)
@@ -278,19 +278,7 @@ const std::vector<xdccd::DCCFilePtr> &xdccd::DCCBot::get_files() const
 
 void xdccd::DCCBot::remove_file(file_id_t file_id)
 {
-    DCCFilePtr file_ptr = nullptr;
-    for(auto file : files)
-    {
-        if(file->id == file_id)
-        {
-            file_ptr = file;
-            break;
-        }    
-    }
-    if(file_ptr != nullptr)
-    {
-        files.erase(std::remove(files.begin(), files.end(), file_ptr)); 
-    }
+    files.erase(std::remove_if(files.begin(), files.end(), [file_id](auto file) { return file->id == file_id; }));
 }
 
 const std::map<std::string, xdccd::DCCAnnouncePtr> &xdccd::DCCBot::get_announces() const
