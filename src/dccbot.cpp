@@ -287,7 +287,10 @@ void xdccd::DCCBot::remove_file(file_id_t file_id)
             break;
         }    
     }
-    files.erase(std::remove(files.begin(), files.end(), file_ptr)); 
+    if(file_ptr != nullptr)
+    {
+        files.erase(std::remove(files.begin(), files.end(), file_ptr)); 
+    }
 }
 
 const std::map<std::string, xdccd::DCCAnnouncePtr> &xdccd::DCCBot::get_announces() const
