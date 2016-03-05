@@ -293,7 +293,7 @@ void xdccd::API::run()
 
     // Static Files
     auto resource = std::make_shared<restbed::Resource>();
-    resource->set_paths({ "/{filename: [a-z]*\\.html}", "/js/{filename: [a-z]*\\.js}" });
+    resource->set_paths({ "/{filename: [a-z]*\\.html}", "/js/{filename: [a-z]*\\.js}", "/css/{filename: [a-z]*\\.css}" });
     resource->set_method_handler("GET", std::bind(&API::static_file_handler, this, std::placeholders::_1));
     service.publish(resource);
 
