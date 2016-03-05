@@ -49,6 +49,7 @@ class DCCBot
         const std::string &get_host() const;
         const std::string &get_port() const;
         const std::vector<DCCFilePtr> &get_files() const;
+        void remove_file(file_id_t file_id);
         const std::map<std::string, DCCAnnouncePtr> &get_announces() const;
         void find_announces(const std::string &query, std::vector<DCCAnnouncePtr> &result) const;
         bot_id_t get_id() const;

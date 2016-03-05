@@ -50,7 +50,16 @@ app.factory('apiService', function($http) {
         headers: {
           'Content-Type': 'application/json'
       }})
-    }
+    },
+
+    removeFileFromList: function(bot_id, file_id) {
+      $http({
+        method: 'POST',
+        url: '/bot/' + bot_id + '/delete/' + file_id,
+        headers: {
+          'Content-Type': 'application/json'
+        }})
+    },
   }
 });
 
@@ -79,7 +88,7 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService) {
 
   $scope.removeFromList = function(file)
   {
-    console.log("To be implemented");
+    apiService.removeFileFromList(file.bot.id, file.id);
   };
 
   $scope.removeFromDisk = function(file)

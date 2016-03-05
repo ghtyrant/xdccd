@@ -150,6 +150,24 @@ void xdccd::API::disconnect_handler(std::shared_ptr<restbed::Session> session)
     session->close(restbed::OK);
 }
 
+void xdccd::API::remove_file_from_list_handler(std::shared_ptr<restbed::Session> session)
+{
+    const auto& request = session->get_request();
+    const std::string bot_id = request->get_path_parameter("id");
+    xdccd::DCCBotPtr bot = manager.get_bot_by_id(static_cast<xdccd::bot_id_t>(std::stoi(bot_id)));
+
+    if(bot == nullptr)
+    {
+        session->close(restbed::NOT_FOUND);
+        return;
+    }
+
+    const std::string file_id = request->get_path_parameter("file");
+    bot->remove_file(static_cast<xdccd::file_id_t>(std::stoi(file_id)));
+
+    session->close(restbed::OK);
+}
+
 void xdccd::API::request_file_handler(std::shared_ptr<restbed::Session> session)
 {
     const auto request = session->get_request();
@@ -303,6 +321,12 @@ void xdccd::API::run()
     resource = std::make_shared<restbed::Resource>();
     resource->set_path("/bot/{id: [0-9]+}/request/");
     resource->set_method_handler("POST", { { "Content-Type", "application/json" } }, std::bind(&API::request_file_handler, this, std::placeholders::_1));
+    resource->set_method_handler("OPTIONS", [](std::shared_ptr<restbed::Session> session) { session->close(restbed::OK, ""); } );
+    service.publish(resource);
+
+    resource = std::make_shared<restbed::Resource>();
+    resource->set_path("/bot/{id: [0-9]+}/delete/{file: [0-9]+}");
+    resource->set_method_handler("POST", { { "Content-Type", "application/json"} }, std::bind(&API::remove_file_from_list_handler, this, std::placeholders::_1));
     resource->set_method_handler("OPTIONS", [](std::shared_ptr<restbed::Session> session) { session->close(restbed::OK, ""); } );
     service.publish(resource);
 
