@@ -34,6 +34,8 @@ void xdccd::API::static_file_handler(std::shared_ptr<restbed::Session> session)
 
     if (boost::algorithm::starts_with(request->get_path(), "/js/"))
         base_path += "js/";
+    if (boost::algorithm::starts_with(request->get_path(), "/css/"))
+        base_path += "css/";
 
     BOOST_LOG_TRIVIAL(info) << "Serving static file '" << (base_path + filename) << "'";
 
@@ -46,6 +48,8 @@ void xdccd::API::static_file_handler(std::shared_ptr<restbed::Session> session)
         std::string content_type = "text/html";
         if (boost::algorithm::ends_with(filename, ".js"))
             content_type = "application/javascript";
+        if (boost::algorithm::ends_with(filename, ".css"))
+            content_type = "text/css";
 
         const std::multimap<std::string, std::string> headers
         {
