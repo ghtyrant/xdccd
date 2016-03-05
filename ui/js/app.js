@@ -60,10 +60,29 @@ app.factory('apiService', function($http) {
           'Content-Type': 'application/json'
         }})
     },
+    cancelDownloadFromList: function(bot_id, file_id) {
+      $http({
+        method: 'POST',
+        url: '/bot/' + bot_id + '/cancel/' + file_id,
+        headers: {
+          'Content-Type': 'application/json'
+        }})
+    },
   }
 });
 
-app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService) {
+app.factory('sharedDataService' , function () {
+     var download_stat = {
+        all_downloads: 0,
+        aktive_downloads: 0,
+        finished_downloads: 0
+    };
+    return download_stat;
+});
+
+app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, sharedDataService) {
+  $scope.download_stat = sharedDataService;
+
   $scope.getBots = function(){
     apiService.getBots().then(function(bots) {
       $scope.bots = bots;
@@ -76,19 +95,36 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService) {
           downloads.push(dl);
         }
       }
+      var aktive_downloads = 0;
+      var finished_downloads = 0;
+      for(var i = 0; i < downloads.length; i++) {
+        if(downloads[i].state == 3)
+        {
+          finished_downloads += 1;
+        }
+        if(downloads[i].state == 2)
+        {
+          aktive_downloads += 1;
+        }
+      }
 
       $scope.downloads = downloads;
+      $scope.download_stat.all_downloads = downloads.length;
+      $scope.download_stat.aktive_downloads = aktive_downloads;
+      $scope.download_stat.finished_downloads = finished_downloads;
     });
   };
 
   $scope.cancelDownload = function(file)
   {
-    console.log("To be implemented");
+    apiService.cancelDownloadFromList(file.bot.id, file.id);
+    $scope.getBots();
   };
 
   $scope.removeFromList = function(file)
   {
     apiService.removeFileFromList(file.bot.id, file.id);
+    $scope.getBots();
   };
 
   $scope.removeFromDisk = function(file)
@@ -118,8 +154,23 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService) {
           downloads.push(dl);
         }
       }
+      var aktive_downloads = 0;
+      var finished_downloads = 0;
+      for(var i = 0; i < downloads.length; i++) {
+        if(downloads[i].state == 3)
+        {
+          finished_downloads += 1;
+        }
+        if(downloads[i].state == 2)
+        {
+          aktive_downloads += 1;
+        }
+      }
 
       $scope.downloads = downloads;
+      $scope.download_stat.all_downloads = downloads.length;
+      $scope.download_stat.aktive_downloads = aktive_downloads;
+      $scope.download_stat.finished_downloads = finished_downloads;
     });
   },3000)
   };
@@ -141,7 +192,8 @@ app.controller('TabsDemoCtrl', function ($scope, $window) {
   };
 });
 
-app.controller('BotContextCtrl', function($scope, $uibModal, apiService) {
+app.controller('BotContextCtrl', function($scope, $uibModal, apiService, sharedDataService) {
+  $scope.download_stat = sharedDataService;
   $scope.openChannelModal = function(bot)
   {
     var modalInstance = $uibModal.open({

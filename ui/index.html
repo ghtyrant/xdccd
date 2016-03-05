@@ -10,6 +10,9 @@
         <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.0/angular-animate.js"></script>
         <script src="http://angular-ui.github.io/bootstrap/ui-bootstrap-tpls-1.2.1.js"></script>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/angularchartmin.css">
+        <script type="text/javascript" src="js/chartmin.js"></script>
+        <script type="text/javascript" src="js/angularchartmin.js"></script>
         <!--<link rel="stylesheet" href="css/style.css">-->
 
         <script src="js/app.js"></script>
@@ -161,7 +164,7 @@
               </uib-tab>
 
               <uib-tab index="1">
-                <uib-tab-heading><i class="glyphicon glyphicon-download-alt"></i> Downloads</uib-tab-heading>
+                <uib-tab-heading><i class="glyphicon glyphicon-download-alt"></i> Downloads <span class="badge">{{ download_stat.aktive_downloads }}</span> <span class="badge">{{ download_stat.finished_downloads }}</span> <span class="badge">{{ download_stat.all_downloads }}</span></uib-tab-heading>
 
                 <div class="col-lg-12" ng-controller="StatusCtrl">
                     <h2>Downloads</h2>
@@ -170,6 +173,7 @@
                         <thead>
                             <tr>
                                 <th>#</th>
+                                <th>Mode</th>
                                 <th>Filename</th>
                                 <th>Bot</th>
                                 <th>Server</th>
@@ -181,6 +185,8 @@
                         <tbody>
                           <tr ng-repeat="file in downloads">
                                 <td>{{ file.id }}</td>
+                                <td ng-show="file.passive"><span class="label label-warning">Passive</span>
+                                <td ng-show="!file.passive"><span class="label label-info">Aktive</span>
                                 <td>{{ file.filename }}</td>
                                 <td>{{ file.bot.botname }}</td>
                                 <td>{{ file.bot.host }}</td>
