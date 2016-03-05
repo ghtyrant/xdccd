@@ -230,7 +230,7 @@ app.controller('SearchCtrl', function($scope, apiService){
   $scope.get_paginations = function(results) {
     if(results != null)
     {
-      x = new Array(Math.floor(results/25) + (results % 25)); 
+      x = new Array(Math.floor(results/25) + ((results % 25) > 0)); 
       console.log(x);
       return x;
     }
