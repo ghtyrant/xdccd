@@ -249,9 +249,15 @@
                               <td><button class="btn btn-default btn-xs" ng-click="add_download(res)"><i class="glyphicon glyphicon-shopping-cart" ></i></button></td>
                             </tr>
                     </table>
+                    <div class="row text-center">
                      <ul class="pagination" ng-hide="!search.results.length">
-                      <li ng-repeat="i in get_paginations(search.total_results) track by $index" ng-class="{'active': search.start/25 == $index }"><a href="#" ng-click="on_search(query, $index*25)">{{ $index+1 }}</a></li>
+                      <li ng-repeat="i in get_paginations(search.total_results) track by $index" ng-class="{'active': search.start/25 == $index }" ng-show="$first"><a href="#" ng-click="on_search(query, $index*25)">{{ $index+1 }}</a></li>
+                      <li><a>...</a></li>
+                      <li ng-repeat="i in get_paginations(search.total_results) track by $index" ng-class="{'active': search.start/25 == $index }" ng-hide="$first || $last || $index != search.start/25 && $index != search.start/25+1 && $index != search.start/25-1"><a href="#" ng-click="on_search(query, $index*25)">{{ $index+1 }}</a></li>
+                      <li><a>...</a></li>
+                      <li ng-repeat="i in get_paginations(search.total_results) track by $index" ng-class="{'active': search.start/25 == $index }" ng-show="$last"><a href="#" ng-click="on_search(query, $index*25)">{{ $index+1 }}</a></li>
                     </ul>
+                  </div>
                 </div>
               </div>
               </uib-tab>
