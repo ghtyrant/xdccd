@@ -1,3 +1,5 @@
+#include <boost/log/trivial.hpp>
+
 #include "searchcache.h"
 #include "botmanager.h"
 
@@ -8,6 +10,12 @@ xdccd::SearchResult::SearchResult(std::size_t total_results, std::size_t result_
 xdccd::CacheEntry::CacheEntry(const std::string &query, const std::vector<DCCAnnouncePtr> &announces)
     : query(query), announces(announces), created(std::chrono::system_clock::now())
 {}
+
+xdccd::SearchCache::~SearchCache()
+{
+    BOOST_LOG_TRIVIAL(warning) << "SearchCache::~SearchCache()";
+    cache.clear();
+}
 
 xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, const std::string &query, std::size_t start, std::size_t limit)
 {
@@ -59,4 +67,10 @@ xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, co
     sr->end = cache_it->second->announces.begin() + start + end;
 
     return sr;
+}
+
+void xdccd::SearchCache::clear()
+{
+    BOOST_LOG_TRIVIAL(info) << "Clearing SearchCache!";
+    cache.clear();
 }

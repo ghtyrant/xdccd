@@ -1,15 +1,27 @@
+#include <boost/log/trivial.hpp>
+
 #include "botmanager.h"
 
 xdccd::BotManager::BotManager(std::size_t max_bots)
-    : max_bots(max_bots), last_bot_id(0), threadpool(std::make_shared<Threadpool>(max_bots))
+    : max_bots(max_bots), last_bot_id(0), threadpool(max_bots)
 {}
+
+xdccd::BotManager::~BotManager()
+{
+    BOOST_LOG_TRIVIAL(warning) << "BotManager::~BotManager()";
+
+    for (auto bot : bots)
+        bot->stop();
+}
 
 void xdccd::BotManager::launch_bot(const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl)
 {
-    DCCBotPtr bot = std::make_shared<DCCBot>(last_bot_id++, threadpool, host, port, nick, channels, use_ssl);
+    DCCBotPtr bot = std::make_shared<DCCBot>(last_bot_id++, host, port, nick, channels, use_ssl);
     bots.push_back(bot);
 
-    threadpool->run_task([bot]() { bot->run(); });
+    BOOST_LOG_TRIVIAL(info) << "Launching bot " << bot;
+
+    threadpool.run_task([bot]() { bot->run(); });
 }
 
 const std::vector<xdccd::DCCBotPtr> &xdccd::BotManager::get_bots()

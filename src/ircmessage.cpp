@@ -39,7 +39,7 @@ xdccd::IRCMessage::IRCMessage(const std::string &message)
     }
 
     // Split all other parameters by space
-    boost::algorithm::split(params, msg, boost::algorithm::is_space(), boost::algorithm::token_compress_on); 
+    boost::algorithm::split(params, msg, boost::algorithm::is_space(), boost::algorithm::token_compress_on);
 
     // If we found a trailing param earlier, add it now
     if (!trailing.empty())

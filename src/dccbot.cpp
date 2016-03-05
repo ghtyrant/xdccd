@@ -1,6 +1,7 @@
-#include <boost/format.hpp>
 #include <cinttypes>
 #include <regex>
+#include <boost/format.hpp>
+#include <boost/log/trivial.hpp>
 
 #include "dccbot.h"
 #include "dccreceivetask.h"
@@ -22,23 +23,26 @@ bool xdccd::DCCAnnounce::compare(const std::string &other) const
     return boost::algorithm::icontains(filename, other);
 }
 
-xdccd::DCCBot::DCCBot(bot_id_t id, ThreadpoolPtr threadpool, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl)
-    : id(id), last_file_id(0), nickname(nick), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), use_ssl),
-    threadpool(threadpool), channels_to_join(channels)
+xdccd::DCCBot::DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl)
+    : id(id), last_file_id(0), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), use_ssl),
+    threadpool(5), channels_to_join(channels)
 {
     std::string result = boost::algorithm::join(channels, ", ");
-    std::cout << "Started bot for '" << host << ":" << port << "', called '" << nick  << "', joining: " << result << std::endl;
-    connection.write((boost::format("NICK %s") % nick).str());
-    connection.write((boost::format("USER %s * * %s") % nick % nick).str());
+
+    change_nick(nick);
+    connection.write((boost::format("USER %s * * :%s") % nick % nick).str());
+
+    BOOST_LOG_TRIVIAL(info) << "Started " << *this << " for '" << host << ":" << port << "', called '" << nick  << "', auto-joining: " << result;
 }
 
 xdccd::DCCBot::~DCCBot()
 {
-    std::cout << "Deleting bot '" << nickname << "'!" << std::endl;
+    BOOST_LOG_TRIVIAL(warning) << "DCCBot::~DCCBot()";
 }
 
 void xdccd::DCCBot::read_handler(const std::string &message)
 {
+
     xdccd::IRCMessage msg(message);
 
     if (msg.command == "PING")
@@ -61,10 +65,34 @@ void xdccd::DCCBot::read_handler(const std::string &message)
         return;
     }
 
-    if (msg.command == "PART" && msg.params[0] == nickname)
+    // Check if we somehow left the channel
+    if (msg.command == "PART" && msg.nickname == nickname)
     {
-        on_part(msg.params[1]);
+        on_part(msg.params[0]);
         return;
+    }
+
+    // Check if we got kicked from the channel
+    if (msg.command == "KICK" && msg.params[1] == nickname)
+    {
+        on_part(msg.params[0]);
+        return;
+    }
+
+    // Nickname already in use
+    if (msg.command == "433")
+    {
+        // Just append a random number to the end of the nickname
+        std::string new_nick = nickname + std::to_string(std::rand() % 10);
+        BOOST_LOG_TRIVIAL(info) << "Nick of " << *this << " is already in use, changing it to '" << new_nick << "'!";
+        change_nick(new_nick);
+        return;
+    }
+
+    // Erronous nickname
+    if (msg.command == "432")
+    {
+        // TODO somehow handle this
     }
 
     if (msg.command == "PRIVMSG")
@@ -73,7 +101,7 @@ void xdccd::DCCBot::read_handler(const std::string &message)
         {
             on_ctcp(msg);
             return;
-        }
+        ;}
 
         on_privmsg(msg);
     }
@@ -81,7 +109,7 @@ void xdccd::DCCBot::read_handler(const std::string &message)
 
 void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
 {
-    std::cout << "CTCP-Message: " << msg.ctcp_command << " says: '" << msg.params[1] << "'" << std::endl;
+    BOOST_LOG_TRIVIAL(info) << "CTCP-Message: " << msg.ctcp_command << " says: '" << msg.params[1] << "'";
 
     if (msg.ctcp_command == "DCC")
     {
@@ -113,8 +141,8 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
                 active = false;
 
                 // We have to send a DCC SEND request back, containing our IP address
-                // DCC SEND <filename> <ip> <port> <filesize> <token> 
-                connection.write((boost::format("PRIVMSG %s :" "\x01" "DCC SEND %s %s %s %s\x01") 
+                // DCC SEND <filename> <ip> <port> <filesize> <token>
+                connection.write((boost::format("PRIVMSG %s :" "\x01" "DCC SEND %s %s %s %s\x01")
                             % msg.nickname
                             % filename
                             % connection.get_local_ip()
@@ -122,7 +150,7 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
                             % size).str());
             }
 
-            std::cout << "DCC SEND request, offering file " << filename << " on ip " << addr.to_string() << ":" << port << std::endl;
+            BOOST_LOG_TRIVIAL(info) << "DCC SEND request, offering file " << filename << " on ip " << addr.to_string() << ":" << port;
 
             std::lock_guard<std::mutex> lock(files_lock);
             std::shared_ptr<DCCFile> file_ptr = nullptr;
@@ -146,7 +174,7 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
                 files.push_back(file_ptr);
             }
 
-            threadpool->run_task(DCCReceiveTask(file_ptr, active));
+            threadpool.run_task(DCCReceiveTask(file_ptr, active));
         }
     }
 }
@@ -158,13 +186,14 @@ void xdccd::DCCBot::run()
 
 void xdccd::DCCBot::stop()
 {
-    std::cout << "Disconnecting bot '" << nickname << "'!" << std::endl;
-    connection.close();
+    BOOST_LOG_TRIVIAL(info) << "Disconnecting bot " << *this;
+    connection.write("QUIT :Bye");
+    //connection.close();
 }
 
 void xdccd::DCCBot::on_connected()
 {
-    std::cout << "Connected!" << std::endl;
+    BOOST_LOG_TRIVIAL(info) << "Connected bot " << *this;
 
     for (auto channel_name : channels_to_join)
         connection.write("JOIN " + channel_name);
@@ -174,12 +203,13 @@ void xdccd::DCCBot::on_connected()
 
 void xdccd::DCCBot::on_join(const std::string &channel)
 {
-    std::cout << "Joined channel " << channel << std::endl;
+    BOOST_LOG_TRIVIAL(info) << "Bot " << *this << " joined channel " << channel;
     channels.push_back(channel);
 }
 
 void xdccd::DCCBot::on_part(const std::string &channel)
 {
+    BOOST_LOG_TRIVIAL(info) << "Bot " << *this << " left channel " << channel;
     channels.erase(std::remove_if(channels.begin(), channels.end(), [channel](const std::string &name) { return name == channel; }));
 }
 
@@ -289,4 +319,15 @@ const std::map<std::string, xdccd::DCCAnnouncePtr> &xdccd::DCCBot::get_announces
 xdccd::bot_id_t xdccd::DCCBot::get_id() const
 {
     return id;
+}
+
+void xdccd::DCCBot::change_nick(const std::string &nick)
+{
+    connection.write((boost::format("NICK %s") % nick).str());
+    nickname = nick;
+}
+
+std::string xdccd::DCCBot::to_string() const
+{
+    return "<Bot #" + std::to_string(id) + " '" + nickname + "'>";
 }

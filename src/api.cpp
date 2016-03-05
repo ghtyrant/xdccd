@@ -1,17 +1,29 @@
 #include <iostream>
 #include <restbed>
 #include <functional>
+#include <csignal>
+#include <sys/types.h>
+#include <unistd.h>
 #include <json/json.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/log/trivial.hpp>
 
 #include "api.h"
 #include "searchcache.h"
 
 using namespace std::placeholders;
+using namespace std::chrono_literals;
+
+bool xdccd::API::quit = false;
 
 xdccd::API::API()
     : manager(10)
 {
+}
+
+xdccd::API::~API()
+{
+    BOOST_LOG_TRIVIAL(warning) << "API::~API()";
 }
 
 xdccd::BotManager &xdccd::API::get_bot_manager()
@@ -27,6 +39,8 @@ void xdccd::API::static_file_handler(std::shared_ptr<restbed::Session> session)
 
     if (boost::algorithm::starts_with(request->get_path(), "/js/"))
         base_path += "js/";
+
+    BOOST_LOG_TRIVIAL(info) << "Serving static file '" << (base_path + filename) << "'";
 
     std::ifstream stream(base_path + filename, std::ifstream::in);
 
@@ -190,7 +204,6 @@ void xdccd::API::request_file_handler(std::shared_ptr<restbed::Session> session)
         Json::Reader reader;
 
         std::string data(body.begin(), body.end());
-        std::cout << "FILE-REQUEST-BODY: " << data << std::endl;
         if (!reader.parse(data.c_str(), root))
         {
             session->close(restbed::UNPROCESSABLE_ENTITY);
@@ -249,8 +262,7 @@ void xdccd::API::search_handler(std::shared_ptr<restbed::Session> session)
         // Build response
         Json::Value root;
 
-        xdccd::SearchResultPtr sr = xdccd::SearchCache::get_instance().search(manager, search_request["query"].asString(), start, limit);
-        std::cout << "Searching for '" << search_request["query"].asString() << "' yields " << sr->total_results << " results, starting with " << sr->result_start << std::endl;
+        xdccd::SearchResultPtr sr = search.search(manager, search_request["query"].asString(), start, limit);
 
         root["total_results"] = static_cast<Json::UInt64>(sr->total_results);
         root["start"] = static_cast<Json::UInt64>(sr->result_start);
@@ -279,6 +291,16 @@ void xdccd::API::search_handler(std::shared_ptr<restbed::Session> session)
     });
 }
 
+void xdccd::API::shutdown_handler(std::shared_ptr<restbed::Session> session)
+{
+    session->close(restbed::OK);
+    stop();
+}
+
+void xdccd::API::stop()
+{
+    service.stop();
+}
 
 void xdccd::API::run()
 {
@@ -336,5 +358,15 @@ void xdccd::API::run()
     resource->set_method_handler("OPTIONS", [](std::shared_ptr<restbed::Session> session) { session->close(restbed::OK, ""); } );
     service.publish(resource);
 
+    // Shutdown
+    resource = std::make_shared<restbed::Resource>();
+    resource->set_path("/shutdown");
+    resource->set_method_handler("GET", std::bind(&API::shutdown_handler, this, std::placeholders::_1));
+    service.publish(resource);
+
+    BOOST_LOG_TRIVIAL(info) << "Starting up REST API ...";
+
+    // Start scheduled task to check if we should stop
+    service.schedule([this](){ if (xdccd::API::quit) { service.stop(); } }, 200ms);
     service.start(settings);
 }

@@ -5,6 +5,7 @@
 #include "dccfile.h"
 #include "ircconnection.h"
 #include "threadpool.h"
+#include "logable.h"
 
 namespace xdccd
 {
@@ -30,10 +31,10 @@ struct DCCAnnounce
 
 typedef std::shared_ptr<DCCAnnounce> DCCAnnouncePtr;
 
-class DCCBot
+class DCCBot : public Logable<DCCBot>
 {
     public:
-        DCCBot(bot_id_t id, ThreadpoolPtr threadpool, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl);
+        DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl);
         ~DCCBot();
         void read_handler(const std::string &message);
         void run();
@@ -53,6 +54,8 @@ class DCCBot
         const std::map<std::string, DCCAnnouncePtr> &get_announces() const;
         void find_announces(const std::string &query, std::vector<DCCAnnouncePtr> &result) const;
         bot_id_t get_id() const;
+        void change_nick(const std::string &nick);
+        virtual std::string to_string() const;
 
     private:
         void add_announce(const std::string &bot, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count);
@@ -64,7 +67,7 @@ class DCCBot
         xdccd::IRCConnection connection;
         std::vector<DCCFilePtr> files;
         std::mutex files_lock;
-        ThreadpoolPtr threadpool;
+        Threadpool threadpool;
         std::vector<std::string> channels;
         std::vector<std::string> channels_to_join;
         std::map<std::string, DCCAnnouncePtr> announces;

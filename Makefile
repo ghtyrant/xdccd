@@ -1,5 +1,5 @@
 CXX=clang++
-CXXFLAGS=-g -std=c++14 -Wall -Wextra -pedantic -DBOOST_LOG_DYN_LINK
+CXXFLAGS=-g -O0 -std=c++14 -Wall -Wextra -pedantic -DBOOST_LOG_DYN_LINK
 LDFLAGS=-lboost_filesystem -lboost_system -lboost_thread -lboost_log_setup -lboost_log -lpthread -lssl -lcrypto -lrestbed -ljsoncpp
 
 OBJDIR=obj
@@ -16,10 +16,10 @@ run: all
 	./$(TARGET)
 
 valgrind: all
-	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --leak-resolution=high --num-callers=20 --trace-children=no --child-silent-after-fork=yes --track-fds=yes --track-origins=yes ./$(TARGET) 2>&1 | tee valgrind.log
+	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=definite,indirect,possible --show-reachable=no --leak-resolution=high --num-callers=20 --trace-children=no --child-silent-after-fork=yes --track-fds=yes --track-origins=yes ./$(TARGET) 2>&1 | tee valgrind.log
 
 helgrind: all
-	valgrind --tool=helgrind ./ircmud 2>&1 | tee helgrind.log
+	valgrind --tool=helgrind ./$(TARGET) 2>&1 | tee helgrind.log
 
 callgrind: all
 	valgrind --tool=callgrind ./$(TARGET)

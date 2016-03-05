@@ -4,6 +4,7 @@
 #include <mutex>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
+#include <boost/log/trivial.hpp>
 
 namespace xdccd
 {
@@ -13,17 +14,19 @@ class Threadpool
     public:
         Threadpool(std::size_t size)
             : work(io_service),
-            available(size)    
+            available(size)
         {
             for (std::size_t i = 0; i < size; i++)
             {
-               threads.create_thread(boost::bind(&boost::asio::io_service::run, &io_service)); 
+               threads.create_thread(boost::bind(&boost::asio::io_service::run, &io_service));
             }
         }
 
         ~Threadpool()
         {
             io_service.stop();
+
+            BOOST_LOG_TRIVIAL(warning) << "Threadpool::~Threadpool()";
 
             try
             {
@@ -35,6 +38,7 @@ class Threadpool
         template <typename Task> void run_task(Task task)
         {
             std::lock_guard<std::mutex> lock(mutex);
+
             if (available == 0) return;
             available--;
 

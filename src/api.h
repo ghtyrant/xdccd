@@ -3,15 +3,21 @@
 #include <restbed>
 
 #include "botmanager.h"
+#include "searchcache.h"
 
 namespace xdccd
 {
 
 class API
 {
+
     public:
+        static bool quit;
+
         API();
+        ~API();
         void run();
+        void stop();
 
         BotManager &get_bot_manager();
 
@@ -25,11 +31,12 @@ class API
         void remove_file_from_list_handler(std::shared_ptr<restbed::Session> session);
         void request_file_handler(std::shared_ptr<restbed::Session> session);
         void search_handler(std::shared_ptr<restbed::Session> session);
+        void shutdown_handler(std::shared_ptr<restbed::Session> session);
 
     private:
         BotManager manager;
+        SearchCache search;
         restbed::Service service;
-
 };
 
 }

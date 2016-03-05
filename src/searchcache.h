@@ -41,24 +41,13 @@ typedef std::unique_ptr<CacheEntry> CacheEntryPtr;
 class SearchCache
 {
     public:
-        static SearchCache& get_instance()
-        {
-            static SearchCache instance;
-            return instance;
-        }
-
-        // Delete copy constructor & assignment
-        SearchCache(SearchCache const&) = delete;
-        void operator=(SearchCache const&) = delete;
-
+        ~SearchCache();
         SearchResultPtr search(BotManager &manager, const std::string &query, std::size_t start = 0, std::size_t limit = 25);
+        void clear();
 
     private:
-        SearchCache() {};
-
         std::mutex cache_lock;
         std::map<std::string, CacheEntryPtr> cache;
-
 };
 
 }

@@ -12,6 +12,7 @@ class BotManager
 {
     public:
         BotManager(std::size_t max_bots);
+        ~BotManager();
         void launch_bot(const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl);
         void run();
         const std::vector<DCCBotPtr> &get_bots();
@@ -21,7 +22,7 @@ class BotManager
     private:
         std::size_t max_bots;
         std::size_t last_bot_id;
-        ThreadpoolPtr threadpool;
+        Threadpool threadpool;
         std::vector<DCCBotPtr> bots;
 };
 

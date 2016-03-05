@@ -1,5 +1,7 @@
 #include <iostream>
 #include <boost/bind.hpp>
+#include <boost/log/trivial.hpp>
+
 #include "ircconnection.h"
 
 xdccd::IRCConnection::IRCConnection(const std::string &host, std::string port, const read_handler_t &read_handler, bool use_ssl)
@@ -13,12 +15,20 @@ xdccd::IRCConnection::IRCConnection(const std::string &host, std::string port, c
     connect();
 }
 
+xdccd::IRCConnection::~IRCConnection()
+{
+    BOOST_LOG_TRIVIAL(warning) << "IRCConnection::~IRCConnection()";
+    close();
+    while (!io_service.stopped())
+    {}
+}
+
 bool xdccd::IRCConnection::connect()
 {
     boost::asio::ip::tcp::resolver resolver(io_service);
     boost::asio::ip::tcp::resolver::query query(host, port);
     boost::system::error_code error = boost::asio::error::host_not_found;
-    
+
     auto iter = resolver.resolve(query);
     decltype(iter) end;
 
@@ -88,8 +98,11 @@ void xdccd::IRCConnection::write(const std::string &message)
 
 void xdccd::IRCConnection::close()
 {
+    BOOST_LOG_TRIVIAL(warning) << "IRCConnection::close()";
     socket->close();
-    io_service.stop();
+
+    if (!io_service.stopped())
+        io_service.stop();
 }
 
 void xdccd::IRCConnection::set_read_handler(const read_handler_t &handler)
