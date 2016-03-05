@@ -74,7 +74,7 @@ app.factory('apiService', function($http) {
 app.factory('sharedDataService' , function () {
      var download_stat = {
         all_downloads: 0,
-        aktive_downloads: 0,
+        active_downloads: 0,
         finished_downloads: 0
     };
     return download_stat;
@@ -95,7 +95,7 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
           downloads.push(dl);
         }
       }
-      var aktive_downloads = 0;
+      var active_downloads = 0;
       var finished_downloads = 0;
       for(var i = 0; i < downloads.length; i++) {
         if(downloads[i].state == 3)
@@ -104,13 +104,13 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
         }
         if(downloads[i].state == 2)
         {
-          aktive_downloads += 1;
+          active_downloads += 1;
         }
       }
 
       $scope.downloads = downloads;
       $scope.download_stat.all_downloads = downloads.length;
-      $scope.download_stat.aktive_downloads = aktive_downloads;
+      $scope.download_stat.active_downloads = active_downloads;
       $scope.download_stat.finished_downloads = finished_downloads;
     });
   };
@@ -154,7 +154,7 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
           downloads.push(dl);
         }
       }
-      var aktive_downloads = 0;
+      var active_downloads = 0;
       var finished_downloads = 0;
       for(var i = 0; i < downloads.length; i++) {
         if(downloads[i].state == 3)
@@ -163,13 +163,13 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
         }
         if(downloads[i].state == 2)
         {
-          aktive_downloads += 1;
+          active_downloads += 1;
         }
       }
 
       $scope.downloads = downloads;
       $scope.download_stat.all_downloads = downloads.length;
-      $scope.download_stat.aktive_downloads = aktive_downloads;
+      $scope.download_stat.active_downloads = active_downloads;
       $scope.download_stat.finished_downloads = finished_downloads;
     });
   },3000)
@@ -178,18 +178,6 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
   $scope.getBots();
   // Kick off the interval
   $scope.intervalFunction();
-});
-
-app.controller('TabsDemoCtrl', function ($scope, $window) {
-  $scope.view_tab = 'tab1';
-
-  $scope.changeTab = function(tab) {
-    $scope.view_tab = tab;
-  }
-
-  $scope.model = {
-    name: 'Tabs'
-  };
 });
 
 app.controller('BotContextCtrl', function($scope, $uibModal, apiService, sharedDataService) {
