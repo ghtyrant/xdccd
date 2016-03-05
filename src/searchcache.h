@@ -18,7 +18,8 @@ struct SearchResult
     SearchResult(std::size_t total_results, std::size_t result_start);
     std::size_t total_results;
     std::size_t result_start;
-    std::vector<DCCAnnouncePtr> announces;
+    std::vector<DCCAnnouncePtr>::const_iterator begin;
+    std::vector<DCCAnnouncePtr>::const_iterator end;
 };
 
 typedef std::shared_ptr<SearchResult> SearchResultPtr;

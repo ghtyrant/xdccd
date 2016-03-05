@@ -54,8 +54,9 @@ xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, co
     if (start >= sr->total_results)
         return sr;
 
-    std::size_t end = std::min(sr->total_results - start, static_cast<std::size_t>(25));
-    std::copy(cache_it->second->announces.begin() + start, cache_it->second->announces.begin() + start + end, std::back_inserter(sr->announces));
+    std::size_t end = std::min(sr->total_results - start, static_cast<std::size_t>(limit));
+    sr->begin = cache_it->second->announces.begin() + start;
+    sr->end = cache_it->second->announces.begin() + start + end;
 
     return sr;
 }
