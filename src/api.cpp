@@ -91,6 +91,7 @@ void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
             file_child["state"] = file->state;
             float received_percent = ((float)file->received / (float)file->size) * 100.0f;
             file_child["received_percent"] = received_percent;
+            file_child["passive"] = file->passive;
 
             child["downloads"].append(file_child);
         }

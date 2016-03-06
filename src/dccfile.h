@@ -36,6 +36,7 @@ class DCCFile
         boost::filesystem::path path;
         boost::filesystem::ofstream stream;
         FileState state;
+        bool passive;
 
 };
 

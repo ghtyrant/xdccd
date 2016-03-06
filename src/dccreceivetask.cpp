@@ -67,6 +67,14 @@ void xdccd::DCCReceiveTask::operator()()
     file->state = xdccd::FileState::DOWNLOADING;
 
     std::cout << "Start " << (active ? "active" : "passive") << " download!" << std::endl;
+    
+    if(active)
+    {
+        file->passive = false;
+    } else {
+        file->passive = true;
+    }
+
     file->open();
 
     boost::system::error_code result = download(socket);

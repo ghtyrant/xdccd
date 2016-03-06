@@ -92,6 +92,19 @@
                 </div>
             </script>
 
+             <script type="text/ng-template" id="playVideo.html">
+                <div class="modal-header">
+                    <h3 class="modal-title">Play Video</h3>
+                </div>
+                <div class="modal-body">
+                  <video ng-src="{{video_src}}" controls></video>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-warning" type="button" ng-click="ok()">Request</button>
+                    <button class="btn btn-default" type="button" ng-click="cancel()">Cancel</button>
+                </div>
+            </script>
+
             <h1><i class="glyphicon glyphicon-cloud-download"></i> XDCCD</h1>
             <hr/>
             <uib-tabset active="active">
@@ -236,7 +249,7 @@
                         </table>
                       </form>
                   </div>
-                  <div class="row">
+                  <div class="row" ng-controller="VideoContextCtrl">
                     <i ng-show="!search.results.length">No search Results</i>
                     <table class="table table-striped" id="cnt1" ng-hide="!search.results.length">
                       <thead>
@@ -244,6 +257,7 @@
                                 <th>Filename</th>
                                 <th>Size</th>
                                 <th>Downloaded</th>
+                                <th></th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -253,6 +267,7 @@
                               <td>{{ res.size }}</td>
                               <td>{{ res.download_count }}x</td>
                               <td><button class="btn btn-default btn-xs" ng-click="add_download(res)"><i class="glyphicon glyphicon-shopping-cart" ></i></button></td>
+                              <td><button class="btn btn-default btn-xs" ng-click="openVideoModal(res)" ng-show="{{ res.name.endsWithLastIndexOf('mp4') }}"><i class="glyphicon glyphicon-film"></i></button></td>
                             </tr>
                     </table>
                     <div class="row text-center">
@@ -282,5 +297,11 @@
         <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+        <script type="text/javascript">
+          String.prototype.endsWithLastIndexOf = function(str) {
+            var lastIndex = this.lastIndexOf(str);
+            return (lastIndex != -1) && (lastIndex + str.length == this.length);
+          };
+        </script>
     </body>
 </html>

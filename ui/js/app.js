@@ -225,6 +225,44 @@ app.controller('BotContextCtrl', function($scope, $uibModal, apiService, sharedD
   };
 });
 
+app.controller('SearchCtrl', function($scope, apiService){
+  $scope.search = [];
+  $scope.on_search = function(query, start) {
+    apiService.searchFile(query, start).then(function(result) { $scope.search = result });;
+  };
+  
+  $scope.add_download = function(request) {
+    apiService.requestFile(request.bot_id, request.bot, request.slot);
+  };
+
+  $scope.get_paginations = function(results) {
+    if(results != null)
+    {
+      x = new Array(Math.floor(results/25) + ((results % 25) > 0)); 
+      console.log(x);
+      return x;
+    }
+  };
+});
+
+app.controller('VideoContextCtrl', function($scope, $uibModal, apiService){
+  $scope.openVideoModal = function(video)
+  {
+    var modalInstance = $uibModal.open({
+      animation: true,
+      templateUrl: 'playVideo.html',
+      controller: 'PlayVideoModalCtrl',
+      resolve: {
+        video: function() { return video || null; }
+      }
+    });
+
+    modalInstance.result.then(function(video) {
+      $scope.video = video;
+    });
+  }
+});
+
 app.controller('JoinChannelModalCtrl', function ($scope, $uibModalInstance, apiService, bot) {
   $scope.bot = bot;
 
@@ -257,22 +295,18 @@ app.controller('FileRequestModalCtrl', function ($scope, $uibModalInstance, apiS
   };
 });
 
-app.controller('SearchCtrl', function($scope, apiService){
-  $scope.search = [];
-  $scope.on_search = function(query, start) {
-    apiService.searchFile(query, start).then(function(result) { $scope.search = result });;
-  };
-  
-  $scope.add_download = function(request) {
-    apiService.requestFile(request.bot_id, request.bot, request.slot);
+app.controller('PlayVideoModalCtrl', function ($scope, $uibModalInstance, apiService, video) {
+  $scope.video_src = video;
+  console.log($scope.video_src);
+  $scope.on_submit = function () {
+    //apiService.requestFile(bot.id, $scope.nick, $scope.slot);
   };
 
-  $scope.get_paginations = function(results) {
-    if(results != null)
-    {
-      x = new Array(Math.floor(results/25) + ((results % 25) > 0)); 
-      console.log(x);
-      return x;
-    }
+  $scope.ok = function () {
+    $uibModalInstance.close();
+  };
+
+  $scope.cancel = function () {
+    $uibModalInstance.dismiss('cancel');
   };
 });
