@@ -2,9 +2,9 @@
 
 #include <functional>
 #include <mutex>
+#include <chrono>
 #include <boost/asio.hpp>
-#include <boost/chrono.hpp>
-#include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/system_timer.hpp>
 
 #include "socket.h"
 
@@ -14,6 +14,13 @@ namespace xdccd
 typedef std::function<void (const std::string&)> read_handler_t;
 typedef std::function<void (void)> write_handler_t;
 typedef std::function<void (void)> connected_handler_t;
+
+namespace connection_limits
+{
+static const std::chrono::milliseconds MIN_RECONNECT_DELAY(500);
+static const std::chrono::seconds MAX_RECONNECT_DELAY(120);
+static const std::chrono::milliseconds READ_TIMEOUT(2000);
+}
 
 class IRCConnection
 {
@@ -48,9 +55,9 @@ class IRCConnection
         boost::asio::streambuf msg_buffer;
         std::string partial_msg;
 
-        std::size_t reconnect_delay;
-        boost::asio::deadline_timer timeout_timer;
-        boost::asio::deadline_timer reconnect_timer;
+        std::chrono::milliseconds reconnect_delay;
+        boost::asio::system_timer timeout_timer;
+        boost::asio::system_timer reconnect_timer;
         bool message_received;
         bool timeout_triggered;
         std::mutex timeout_lock;

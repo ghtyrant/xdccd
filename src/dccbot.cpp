@@ -194,8 +194,6 @@ void xdccd::DCCBot::on_welcome()
 
     for (auto channel_name : channels_to_join)
         connection.write("JOIN " + channel_name);
-
-    channels_to_join.clear();
 }
 
 void xdccd::DCCBot::on_join(const std::string &channel)

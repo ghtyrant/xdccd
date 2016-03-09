@@ -53,7 +53,7 @@ bool xdccd::IRCConnection::connect()
         return false;
     }
 
-    reconnect_delay = 500;
+    reconnect_delay = xdccd::connection_limits::MIN_RECONNECT_DELAY;
 
     // Inform the bot about the succesful connection
     connected_handler();
@@ -106,7 +106,7 @@ void xdccd::IRCConnection::read(const boost::system::error_code& error, std::siz
         message_received = true;
 
     // Restart timeout timer
-    timeout_timer.expires_from_now(boost::posix_time::seconds(2));
+    timeout_timer.expires_from_now(xdccd::connection_limits::READ_TIMEOUT);
     timeout_timer.async_wait([this](const boost::system::error_code& error){ if (!error) { std::lock_guard<std::mutex> lock(timeout_lock); timeout_triggered = true; } });
     timeout_lock.unlock();
 
@@ -151,14 +151,14 @@ void xdccd::IRCConnection::close()
 
 void xdccd::IRCConnection::start_reconnect_timer()
 {
-    if (reconnect_timer.expires_from_now() > boost::posix_time::seconds(0))
+    if (reconnect_timer.expires_from_now() > std::chrono::milliseconds::zero())
         return;
 
-    BOOST_LOG_TRIVIAL(info) << "Trying to reconnect again in " << reconnect_delay << "ms ...";
+    BOOST_LOG_TRIVIAL(info) << "Trying to reconnect again in " << reconnect_delay.count() << "ms ...";
 
     std::lock_guard<std::mutex> lock(timeout_lock);
-    reconnect_delay = reconnect_delay == 0 ? 500 : reconnect_delay * 2;
-    reconnect_timer.expires_from_now(boost::posix_time::milliseconds(reconnect_delay));
+    reconnect_delay = reconnect_delay == std::chrono::milliseconds::zero() ? xdccd::connection_limits::MIN_RECONNECT_DELAY : reconnect_delay * 2;
+    reconnect_timer.expires_from_now(reconnect_delay);
     reconnect_timer.async_wait([this](const boost::system::error_code& error){ if (!error) { BOOST_LOG_TRIVIAL(info) << "Reconnecting ..."; this->connect(); } else { BOOST_LOG_TRIVIAL(info) << "Error reconnecting!"; } });
 }
 
