@@ -38,6 +38,11 @@ std::string xdccd::PlainSocket::get_address() const
     return socket.local_endpoint().address().to_string();
 }
 
+bool xdccd::PlainSocket::is_open() const
+{
+    return socket.is_open();
+}
+
 xdccd::SSLSocket::SSLSocket(boost::asio::io_service &io_service)
     : ssl_context(boost::asio::ssl::context::sslv23), socket(io_service, ssl_context)
 {
@@ -80,4 +85,9 @@ void xdccd::SSLSocket::async_write(const boost::asio::const_buffers_1 &b, std::f
 std::string xdccd::SSLSocket::get_address() const
 {
     return socket.lowest_layer().local_endpoint().address().to_string();
+}
+
+bool xdccd::SSLSocket::is_open() const
+{
+    return socket.lowest_layer().is_open();
 }

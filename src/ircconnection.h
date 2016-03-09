@@ -19,7 +19,7 @@ namespace connection_limits
 {
 static const std::chrono::milliseconds MIN_RECONNECT_DELAY(500);
 static const std::chrono::seconds MAX_RECONNECT_DELAY(120);
-static const std::chrono::milliseconds READ_TIMEOUT(2000);
+static const std::chrono::seconds READ_TIMEOUT(120);
 }
 
 class IRCConnection

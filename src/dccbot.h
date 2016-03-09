@@ -6,6 +6,7 @@
 #include "ircconnection.h"
 #include "threadpool.h"
 #include "logable.h"
+#include "logging.h"
 
 namespace xdccd
 {
@@ -56,6 +57,8 @@ class DCCBot : public Logable<DCCBot>
         bot_id_t get_id() const;
         void change_nick(const std::string &nick);
         virtual std::string to_string() const;
+
+        static xdccd::logger_type_t logger;
 
     private:
         void add_announce(const std::string &bot, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count);

@@ -1,7 +1,6 @@
 #include <cinttypes>
 #include <regex>
 #include <boost/format.hpp>
-#include <boost/log/trivial.hpp>
 
 #include "dccbot.h"
 #include "dccreceivetask.h"
@@ -22,6 +21,8 @@ bool xdccd::DCCAnnounce::compare(const std::string &other) const
 {
     return boost::algorithm::icontains(filename, other);
 }
+
+xdccd::logger_type_t xdccd::DCCBot::logger(boost::log::keywords::channel = "DCCBot");
 
 xdccd::DCCBot::DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl)
     : id(id), last_file_id(0), nickname(nick), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), ([this]() { this->on_connected(); }), use_ssl),

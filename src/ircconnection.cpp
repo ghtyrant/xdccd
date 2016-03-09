@@ -82,6 +82,10 @@ void xdccd::IRCConnection::run()
 
             timeout_lock.lock();
             message_received = false;
+
+            // Restart timeout timer
+            timeout_timer.expires_from_now(xdccd::connection_limits::READ_TIMEOUT);
+            timeout_timer.async_wait([this](const boost::system::error_code& error){ if (!error) { std::lock_guard<std::mutex> lock(timeout_lock); timeout_triggered = true; } });
             timeout_lock.unlock();
         }
         else if (timeout_triggered)
@@ -99,19 +103,14 @@ void xdccd::IRCConnection::run()
 
 void xdccd::IRCConnection::read(const boost::system::error_code& error, std::size_t count)
 {
-    timeout_lock.lock();
-
-    message_received = false;
     if (!error)
-        message_received = true;
-
-    // Restart timeout timer
-    timeout_timer.expires_from_now(xdccd::connection_limits::READ_TIMEOUT);
-    timeout_timer.async_wait([this](const boost::system::error_code& error){ if (!error) { std::lock_guard<std::mutex> lock(timeout_lock); timeout_triggered = true; } });
-    timeout_lock.unlock();
-
-    if (message_received)
     {
+        timeout_lock.lock();
+        message_received = true;
+        timeout_lock.unlock();
+
+        BOOST_LOG_TRIVIAL(info) << "Last read!";
+
         boost::asio::streambuf::const_buffers_type bufs = msg_buffer.data();
         read_handler(
                 std::string(boost::asio::buffers_begin(bufs),

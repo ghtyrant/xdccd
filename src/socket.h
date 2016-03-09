@@ -15,6 +15,7 @@ class Socket
         virtual void async_read_until(boost::asio::streambuf& b, const std::string& delim, std::function<void(const boost::system::error_code&, std::size_t)> handle) = 0;
         virtual void async_write(const boost::asio::const_buffers_1 &b, std::function<void(const boost::system::error_code&, std::size_t)> handle) = 0;
         virtual std::string get_address() const = 0;
+        virtual bool is_open() const = 0;
 };
 
 class PlainSocket : public Socket
@@ -27,6 +28,7 @@ class PlainSocket : public Socket
         virtual void async_read_until(boost::asio::streambuf& b, const std::string& delim, std::function<void(const boost::system::error_code&, std::size_t)> handle);
         virtual void async_write(const boost::asio::const_buffers_1 &b, std::function<void(const boost::system::error_code&, std::size_t)> handle);
         virtual std::string get_address() const;
+        virtual bool is_open() const;
 
     private:
         boost::asio::ip::tcp::socket socket;
@@ -42,6 +44,7 @@ class SSLSocket : public Socket
         virtual void async_read_until(boost::asio::streambuf& b, const std::string& delim, std::function<void(const boost::system::error_code&, std::size_t)> handle);
         virtual void async_write(const boost::asio::const_buffers_1 &b, std::function<void(const boost::system::error_code&, std::size_t)> handle);
         virtual std::string get_address() const;
+        virtual bool is_open() const;
 
     private:
         bool verify_certificate(bool preverified, boost::asio::ssl::verify_context& ctx);
