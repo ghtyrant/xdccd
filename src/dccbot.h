@@ -39,6 +39,7 @@ class DCCBot : public Logable<DCCBot>
         void run();
         void stop();
         void on_connected();
+        void on_welcome();
         void on_ctcp(const xdccd::IRCMessage &msg);
         void on_join(const std::string &channel);
         void on_part(const std::string &channel);

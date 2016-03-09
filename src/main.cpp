@@ -62,8 +62,8 @@ int main(int argc, char* argv[])
 
     std::signal(SIGINT, signal_handler);
     xdccd::API api;
-    //api.get_bot_manager().launch_bot("irc.abjects.net", "6667", "asjd72z", { "#moviegods", "#mg-chat" }, false);
-    api.get_bot_manager().launch_bot("irc.abjects.net", "6667", "nnkh", { "#moviegods", "#mg-chat" }, false);
+    //api.get_bot_manager().launch_bot("irc.abjects.net", "6667", "nnkh", { "#moviegods", "#mg-chat" }, false);
+    api.get_bot_manager().launch_bot("localhost", "6667", "nnkh", { "#moviegods", "#mg-chat" }, false);
     api.run();
 
     BOOST_LOG_TRIVIAL(info) << "Quitting ...";

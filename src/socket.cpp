@@ -18,14 +18,19 @@ void xdccd::PlainSocket::close()
     socket.close();
 }
 
+void xdccd::PlainSocket::cancel()
+{
+    socket.cancel();
+}
+
 void xdccd::PlainSocket::async_read_until(boost::asio::streambuf& b, const std::string& delim, std::function<void(const boost::system::error_code&, std::size_t)> handle)
 {
     boost::asio::async_read_until(socket, b, delim, handle);
 }
 
-void xdccd::PlainSocket::write(const boost::asio::const_buffers_1 &b)
+void xdccd::PlainSocket::async_write(const boost::asio::const_buffers_1 &b, std::function<void(const boost::system::error_code&, std::size_t)> handle)
 {
-    boost::asio::write(socket, b);
+    boost::asio::async_write(socket, b, handle);
 }
 
 std::string xdccd::PlainSocket::get_address() const
@@ -51,6 +56,11 @@ void xdccd::SSLSocket::close()
     socket.lowest_layer().close();
 }
 
+void xdccd::SSLSocket::cancel()
+{
+    socket.lowest_layer().cancel();
+}
+
 void xdccd::SSLSocket::async_read_until(boost::asio::streambuf& b, const std::string& delim, std::function<void(const boost::system::error_code&, std::size_t)> handle)
 {
     boost::asio::async_read_until(socket, b, delim, handle);
@@ -62,9 +72,9 @@ bool xdccd::SSLSocket::verify_certificate(bool preverified, boost::asio::ssl::ve
     return true;
 }
 
-void xdccd::SSLSocket::write(const boost::asio::const_buffers_1 &b)
+void xdccd::SSLSocket::async_write(const boost::asio::const_buffers_1 &b, std::function<void(const boost::system::error_code&, std::size_t)> handle)
 {
-    boost::asio::write(socket, b);
+    boost::asio::async_write(socket, b, handle);
 }
 
 std::string xdccd::SSLSocket::get_address() const

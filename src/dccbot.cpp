@@ -24,14 +24,10 @@ bool xdccd::DCCAnnounce::compare(const std::string &other) const
 }
 
 xdccd::DCCBot::DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl)
-    : id(id), last_file_id(0), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), use_ssl),
+    : id(id), last_file_id(0), nickname(nick), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), ([this]() { this->on_connected(); }), use_ssl),
     threadpool(5), channels_to_join(channels)
 {
     std::string result = boost::algorithm::join(channels, ", ");
-
-    change_nick(nick);
-    connection.write((boost::format("USER %s * * :%s") % nick % nick).str());
-
     BOOST_LOG_TRIVIAL(info) << "Started " << *this << " for '" << host << ":" << port << "', called '" << nick  << "', auto-joining: " << result;
 }
 
@@ -49,7 +45,7 @@ void xdccd::DCCBot::read_handler(const std::string &message)
     // 001 is the server's welcome message
     if (msg.command == "001")
     {
-        on_connected();
+        on_welcome();
         return;
     }
 
@@ -187,6 +183,12 @@ void xdccd::DCCBot::stop()
 }
 
 void xdccd::DCCBot::on_connected()
+{
+    change_nick(nickname);
+    connection.write((boost::format("USER %s * * :%s") % nickname % nickname).str());
+}
+
+void xdccd::DCCBot::on_welcome()
 {
     BOOST_LOG_TRIVIAL(info) << "Connected bot " << *this;
 
