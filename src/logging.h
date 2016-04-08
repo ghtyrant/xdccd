@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/log/trivial.hpp>
 #include <boost/log/sources/severity_channel_logger.hpp>
 
 namespace xdccd

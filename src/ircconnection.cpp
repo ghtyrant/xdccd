@@ -9,6 +9,8 @@ xdccd::IRCConnection::IRCConnection(const std::string &host, std::string port, c
     : host(host),
     port(port),
     use_ssl(use_ssl),
+    connected(false),
+    resolver(io_service),
     work(std::make_unique<boost::asio::io_service::work>(io_service)),
     read_handler(read_handler),
     connected_handler(connected_handler),
@@ -18,42 +20,54 @@ xdccd::IRCConnection::IRCConnection(const std::string &host, std::string port, c
     message_received(false),
     timeout_triggered(false)
 {
-    connect();
 }
 
-bool xdccd::IRCConnection::connect()
+void xdccd::IRCConnection::connect()
 {
     if (use_ssl)
         socket = std::make_unique<xdccd::SSLSocket>(io_service);
     else
         socket = std::make_unique<xdccd::PlainSocket>(io_service);
 
-    boost::asio::ip::tcp::resolver resolver(io_service);
     boost::asio::ip::tcp::resolver::query query(host, port);
     boost::system::error_code error = boost::asio::error::host_not_found;
 
-    auto iter = resolver.resolve(query);
-    decltype(iter) end;
+    BOOST_LOG_TRIVIAL(debug) << "Trying to resolve " << host << "...";
+    /*boost::asio::system_timer resolve_timeout(io_service);
+    resolve_timeout.expires_from_now(xdccd::connection_limits::READ_TIMEOUT);
+    resolve_timeout.async_wait([this, &resolver](const boost::system::error_code& error){ if (!error) { resolver.cancel(); start_reconnect_timer(); } });*/
 
-    BOOST_LOG_TRIVIAL(info) << "Connecting to " << host << ":" << port << "...";
+    resolver.async_resolve(query,
+        boost::bind(&xdccd::IRCConnection::on_resolved, this,
+            boost::asio::placeholders::error,
+            boost::asio::placeholders::iterator));
+}
 
-    while (iter != end)
+void xdccd::IRCConnection::on_resolved(const boost::system::error_code& err, boost::asio::ip::tcp::resolver::iterator endpoint_iterator)
+{
+    decltype(endpoint_iterator) end;
+    boost::system::error_code error = boost::asio::error::host_not_found;
+
+    while (endpoint_iterator != end)
     {
         if (!error)
             break;
 
         socket->close();
-        socket->connect(*iter++, error);
+        BOOST_LOG_TRIVIAL(info) << "Trying to connect to " << host << ":" << port << " (" << (*endpoint_iterator).endpoint().address().to_string() << ") ...";
+        socket->connect(*endpoint_iterator++, error);
     }
 
     if (error)
     {
         BOOST_LOG_TRIVIAL(info) << "Error connecting to " << host << ": " << error.message();
         start_reconnect_timer();
-        return false;
+        return;
     }
 
     reconnect_delay = xdccd::connection_limits::MIN_RECONNECT_DELAY;
+
+    connected = true;
 
     // Inform the bot about the succesful connection
     connected_handler();
@@ -66,15 +80,27 @@ bool xdccd::IRCConnection::connect()
                 boost::asio::placeholders::error,
                 boost::asio::placeholders::bytes_transferred)
     );
-
-    return true;
 }
 
 void xdccd::IRCConnection::run()
 {
+    if (!connected)
+    {
+        BOOST_LOG_TRIVIAL(warning) << "Not connected, connectinendfgjdofgjeng!";
+        connect();
+    }
+
+    BOOST_LOG_TRIVIAL(warning) << "IRCConnection::run()";
     while (!io_service.stopped() && io_service.run_one())
     {
         std::lock_guard<std::mutex> lock(io_lock);
+
+        if (!connected)
+        {
+            BOOST_LOG_TRIVIAL(warning) << "Not connected, connectinendfgjdofgjeng!";
+            connect();
+            continue;
+        }
 
         if (message_received)
         {
@@ -108,8 +134,6 @@ void xdccd::IRCConnection::read(const boost::system::error_code& error, std::siz
         timeout_lock.lock();
         message_received = true;
         timeout_lock.unlock();
-
-        BOOST_LOG_TRIVIAL(info) << "Last read!";
 
         boost::asio::streambuf::const_buffers_type bufs = msg_buffer.data();
         read_handler(

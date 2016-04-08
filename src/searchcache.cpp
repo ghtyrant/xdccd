@@ -1,5 +1,6 @@
 #include <boost/log/trivial.hpp>
 
+#include "logging.h"
 #include "searchcache.h"
 #include "botmanager.h"
 
@@ -25,7 +26,7 @@ xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, co
         // Remove cache entries older than MAX_CACHE_AGE
         if (age >= xdccd::search::MAX_CACHE_AGE)
         {
-            std::cout << "Removing cached search result for '" << query << "' due to old age." << std::endl;
+            BOOST_LOG_TRIVIAL(debug) << "Removing cached search result for '" << query << "' due to old age.";
             cache.erase(cache_it);
             cache_it = cache.end();
         }
@@ -44,7 +45,7 @@ xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, co
         if (tmp.empty())
             return sr;
 
-        std::cout << "Cached search result for '" << query << "' with " << tmp.size() << " results." << std::endl;
+        BOOST_LOG_TRIVIAL(debug) << "Cached search result for '" << query << "' with " << tmp.size() << " results.";
 
         // Insert newly generated CacheEntry
         auto insert_result = cache.insert(std::make_pair(query, std::make_unique<CacheEntry>(query, tmp)));
@@ -65,6 +66,6 @@ xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, co
 
 void xdccd::SearchCache::clear()
 {
-    BOOST_LOG_TRIVIAL(info) << "Clearing SearchCache!";
+    BOOST_LOG_TRIVIAL(debug) << "Clearing SearchCache!";
     cache.clear();
 }

@@ -26,7 +26,8 @@ class IRCConnection
 {
     public:
         IRCConnection(const std::string &host, std::string port, const read_handler_t &read_handler, const connected_handler_t &connected_handler, bool use_ssl);
-        bool connect();
+        void connect();
+        void on_resolved(const boost::system::error_code& err, boost::asio::ip::tcp::resolver::iterator endpoint_iterator);
         void run();
         void read(const boost::system::error_code& error, std::size_t count);
         void write(const std::string &message);
@@ -42,9 +43,11 @@ class IRCConnection
         std::string host;
         std::string port;
         bool use_ssl;
+        bool connected;
 
         std::mutex io_lock;
         boost::asio::io_service io_service;
+        boost::asio::ip::tcp::resolver resolver;
         std::unique_ptr<boost::asio::io_service::work> work;
         std::unique_ptr<xdccd::Socket> socket;
 

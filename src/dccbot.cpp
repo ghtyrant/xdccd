@@ -127,10 +127,14 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
                 addr = boost::asio::ip::address(tmp);
             }
 
+            BOOST_LOG_TRIVIAL(info) << "Incoming DCC SEND request, offering file " << filename << " on ip " << addr.to_string() << ":" << port;
+
             // Other side wants to initiate passive DCC
             if (port == "0")
             {
                 active = false;
+
+                BOOST_LOG_TRIVIAL(info) << "Passive DCC offer, answering with my IP and port.";
 
                 // We have to send a DCC SEND request back, containing our IP address
                 // DCC SEND <filename> <ip> <port> <filesize> <token>
@@ -142,13 +146,13 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
                             % size).str());
             }
 
-            BOOST_LOG_TRIVIAL(info) << "DCC SEND request, offering file " << filename << " on ip " << addr.to_string() << ":" << port;
 
             std::lock_guard<std::mutex> lock(files_lock);
             std::shared_ptr<DCCFile> file_ptr = nullptr;
 
             // Check if we are expecting the incoming file
             for(auto file : files)
+            {
                 if (file->bot == msg.nickname && file->filename == filename && file->state == xdccd::FileState::AWAITING_CONNECTION)
                 {
                     file_ptr = file;
@@ -157,6 +161,7 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
                     file_ptr->size = std::strtoumax(size.c_str(), nullptr, 10);
                     break;
                 }
+            }
 
             // If not, add it anyway and wait for user interaction
             if (file_ptr == nullptr)
@@ -173,6 +178,7 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
 
 void xdccd::DCCBot::run()
 {
+    BOOST_LOG_TRIVIAL(warning) << "Running IRCConnection ...";
     connection.run();
 }
 
@@ -229,6 +235,7 @@ void xdccd::DCCBot::on_privmsg(const xdccd::IRCMessage &msg)
 
 void xdccd::DCCBot::request_file(const std::string &nick, const std::string &slot)
 {
+    BOOST_LOG_TRIVIAL(info) << "Requesting file in slot #" << slot << " from bot '" << nick << "' on " << *this;
     connection.write((boost::format("PRIVMSG %s :xdcc send #%s") % nick % slot).str());
 
     // Check if we already discovered the file the user wants to download
@@ -239,6 +246,7 @@ void xdccd::DCCBot::request_file(const std::string &nick, const std::string &slo
 
     // Yes, we have it, let's create the DCCFile for it now
     DCCFilePtr file_ptr = std::make_shared<DCCFile>(last_file_id++, nick, "", "", announce->filename, 0);
+    files.push_back(file_ptr);
 }
 
 const std::vector<std::string> &xdccd::DCCBot::get_channels() const

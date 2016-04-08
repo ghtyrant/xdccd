@@ -14,7 +14,8 @@ class Threadpool
     public:
         Threadpool(std::size_t size)
             : work(io_service),
-            available(size)
+              available(size),
+              stop(false)
         {
             for (std::size_t i = 0; i < size; i++)
             {
@@ -24,7 +25,9 @@ class Threadpool
 
         ~Threadpool()
         {
+            BOOST_LOG_TRIVIAL(info) << "Threadpool::~Threadpool";
             io_service.stop();
+            stop = true;
 
             try
             {
@@ -41,15 +44,15 @@ class Threadpool
             available--;
 
             io_service.post(boost::bind(&Threadpool::wrap_task, this,
-                            std::function<void()>(task)));
+                            std::function<void(bool&)>(task)));
         }
 
     private:
-        void wrap_task(std::function<void()> task)
+        void wrap_task(std::function<void(bool&)> task)
         {
             try
             {
-                task();
+                task(stop);
             }
             catch (...) {}
 
@@ -62,6 +65,7 @@ class Threadpool
         boost::thread_group threads;
         std::size_t available;
         std::mutex mutex;
+        bool stop;
 };
 
 typedef std::shared_ptr<Threadpool> ThreadpoolPtr;

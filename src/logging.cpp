@@ -10,7 +10,7 @@
 #include <boost/log/support/date_time.hpp>
 
 #include "logging.h"
-#include "dccbot.h"
+//#include "dccbot.h"
 
 void xdccd::setup_logging()
 {

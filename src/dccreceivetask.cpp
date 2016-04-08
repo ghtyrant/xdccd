@@ -2,6 +2,7 @@
 #include <iomanip>
 
 #include "dccreceivetask.h"
+#include "logging.h"
 
 xdccd::DCCReceiveTask::DCCReceiveTask(std::shared_ptr<DCCFile> file, bool active)
     : file(file), active(active)
@@ -12,7 +13,7 @@ bool xdccd::DCCReceiveTask::connect(boost::asio::io_service &io_service, boost::
     boost::asio::ip::tcp::resolver resolver(io_service);
     boost::asio::ip::tcp::resolver::query query(file->ip, file->port);
     boost::system::error_code error = boost::asio::error::host_not_found;
-    
+
     auto iter = resolver.resolve(query);
     decltype(iter) end;
 
@@ -48,7 +49,7 @@ bool xdccd::DCCReceiveTask::listen(boost::asio::io_service &io_service, boost::a
 }
 
 
-void xdccd::DCCReceiveTask::operator()()
+void xdccd::DCCReceiveTask::operator()(bool &stop)
 {
     boost::asio::io_service io_service;
     boost::asio::ip::tcp::socket socket(io_service);
@@ -66,18 +67,12 @@ void xdccd::DCCReceiveTask::operator()()
 
     file->state = xdccd::FileState::DOWNLOADING;
 
-    std::cout << "Start " << (active ? "active" : "passive") << " download!" << std::endl;
-    
-    if(active)
-    {
-        file->passive = false;
-    } else {
-        file->passive = true;
-    }
+    BOOST_LOG_TRIVIAL(info) << "Starting " << (active ? "active" : "passive") << " download of file '" << file->filename << "'";
 
+    file->passive = !active;
     file->open();
 
-    boost::system::error_code result = download(socket);
+    boost::system::error_code result = download(socket, stop);
 
     io_service.stop();
     file->close();
@@ -85,22 +80,23 @@ void xdccd::DCCReceiveTask::operator()()
     if (result != boost::system::errc::success)
     {
         file->state = xdccd::FileState::ERROR;
+        BOOST_LOG_TRIVIAL(info) << "Error downloading file '" << file->filename << "'";
         throw boost::system::system_error(result);
     }
     else
         file->state = xdccd::FileState::FINISHED;
 
-    std::cout << "Downloaded file!" << std::endl;
+    BOOST_LOG_TRIVIAL(info) << "Finished downloading file '" << file->filename << "'";
 }
 
-boost::system::error_code xdccd::DCCReceiveTask::download(boost::asio::ip::tcp::socket &socket)
+boost::system::error_code xdccd::DCCReceiveTask::download(boost::asio::ip::tcp::socket &socket, bool &stop)
 {
     boost::system::error_code error;
     error.assign(boost::system::errc::success, boost::system::system_category());
     std::array<char, 8196> buffer;
     float old_percent = 0.0f;
 
-    for (;;)
+    while (!stop)
     {
         std::size_t len = socket.read_some(boost::asio::buffer(buffer), error);
         file->received += len;
@@ -113,9 +109,9 @@ boost::system::error_code xdccd::DCCReceiveTask::download(boost::asio::ip::tcp::
 
         if (percent - old_percent > 5.0f)
         {
-            std::cout << "File '" << file->filename << "': "
+            BOOST_LOG_TRIVIAL(info) << "File '" << file->filename << "': "
                       << std::setprecision(4) << percent << "%"
-                      << " (" << file->received << "/" << file->size << ")" << std::endl;
+                      << " (" << file->received << "/" << file->size << ")";
 
             old_percent = percent;
         }
@@ -124,7 +120,9 @@ boost::system::error_code xdccd::DCCReceiveTask::download(boost::asio::ip::tcp::
             break; // Connection closed cleanly by peer.
         else if (error)
             break;
-    };
+    }
+
+    BOOST_LOG_TRIVIAL(info) << "Stopping dowload of file '" << file->filename << "'";
 
     return error;
 }
