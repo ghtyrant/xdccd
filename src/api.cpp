@@ -276,7 +276,7 @@ void xdccd::API::search_handler(std::shared_ptr<restbed::Session> session)
         for (auto it = sr->begin; it != sr->end; ++it)
         {
             Json::Value child;
-            DCCAnnouncePtr announce = *it;
+            DCCAnnouncePtr announce = (*it)->announce;
 
             child["bot_id"] = static_cast<Json::UInt64>(announce->bot_id);
             child["name"] = announce->filename;
@@ -284,6 +284,7 @@ void xdccd::API::search_handler(std::shared_ptr<restbed::Session> session)
             child["download_count"] = announce->download_count;
             child["bot"] = announce->bot_name;
             child["slot"] = announce->slot;
+            child["score"] = (*it)->score;
             result_list.append(child);
         }
 

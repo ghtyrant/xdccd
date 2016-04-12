@@ -235,7 +235,7 @@
                                 <th>Filename</th>
                                 <th>Size</th>
                                 <th>Downloaded</th>
-                                <th></th>
+                                <th>Hitscore</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -244,8 +244,11 @@
                               <td>{{ res.name }}</td>
                               <td>{{ res.size }}</td>
                               <td>{{ res.download_count }}x</td>
-                              <td><button class="btn btn-default btn-xs" ng-click="add_download(res)"><i class="glyphicon glyphicon-shopping-cart" ></i></button></td>
-                              <td><button class="btn btn-default btn-xs" ng-click="openVideoModal(res)" ng-show="{{ res.name.endsWithLastIndexOf('mp4') }}"><i class="glyphicon glyphicon-film"></i></button></td>
+                              <td>{{ res.score }}</td>
+                              <td>
+                                  <button class="btn btn-default btn-xs" ng-click="add_download(res)"><i class="glyphicon glyphicon-shopping-cart" ></i></button>
+                                  <button class="btn btn-default btn-xs" ng-click="openVideoModal(res)" ng-show="{{ res.name.endsWithLastIndexOf('mp4') }}"><i class="glyphicon glyphicon-film"></i></button>
+                              </td>
                             </tr>
                     </table>
                     <div class="row text-center">
