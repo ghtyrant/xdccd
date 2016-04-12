@@ -335,3 +335,8 @@ std::string xdccd::DCCBot::to_string() const
 {
     return "<Bot #" + std::to_string(id) + " '" + nickname + "'>";
 }
+
+xdccd::connection::STATE xdccd::DCCBot::get_connection_state() const
+{
+    return connection.get_state();
+}

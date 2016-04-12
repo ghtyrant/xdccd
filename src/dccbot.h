@@ -57,6 +57,7 @@ class DCCBot : public Logable<DCCBot>
         bot_id_t get_id() const;
         void change_nick(const std::string &nick);
         virtual std::string to_string() const;
+        connection::STATE get_connection_state() const;
 
         static xdccd::logger_type_t logger;
 
