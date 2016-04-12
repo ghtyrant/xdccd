@@ -36,6 +36,8 @@ void xdccd::API::static_file_handler(std::shared_ptr<restbed::Session> session)
         base_path += "js/";
     if (boost::algorithm::starts_with(request->get_path(), "/css/"))
         base_path += "css/";
+    if (boost::algorithm::starts_with(request->get_path(), "/img/"))
+        base_path += "img/";
 
     BOOST_LOG_TRIVIAL(info) << "Serving static file '" << (base_path + filename) << "'";
 
@@ -48,8 +50,10 @@ void xdccd::API::static_file_handler(std::shared_ptr<restbed::Session> session)
         std::string content_type = "text/html";
         if (boost::algorithm::ends_with(filename, ".js"))
             content_type = "application/javascript";
-        if (boost::algorithm::ends_with(filename, ".css"))
+        else if (boost::algorithm::ends_with(filename, ".css"))
             content_type = "text/css";
+        else if (boost::algorithm::ends_with(filename, ".gif"))
+            content_type = "image/gif";
 
         const std::multimap<std::string, std::string> headers
         {
@@ -72,6 +76,7 @@ void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
         Json::Value child;
         child["id"] = static_cast<Json::UInt64>(bot->get_id());
         child["botname"] = bot->get_nickname();
+        child["connection_state"] = bot->get_connection_state();
         child["host"] = bot->get_host() + ":" + bot->get_port();
         child["announces"] = static_cast<Json::UInt64>(bot->get_announces().size());
 
@@ -315,7 +320,7 @@ void xdccd::API::run()
 
     // Static Files
     auto resource = std::make_shared<restbed::Resource>();
-    resource->set_paths({ "/{filename: [a-z]*\\.html}", "/js/{filename: [a-z]*\\.js}", "/css/{filename: [a-z]*\\.css}" });
+    resource->set_paths({ "/{filename: [a-z]*\\.html}", "/js/{filename: [a-z]*\\.js}", "/css/{filename: [a-z]*\\.css}", "/img/{filename: [a-z]*\\.gif}" });
     resource->set_method_handler("GET", std::bind(&API::static_file_handler, this, std::placeholders::_1));
     service.publish(resource);
 

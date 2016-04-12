@@ -31,28 +31,6 @@
         </style>
     </head>
     <body>
-
-      <!--
-        <nav class="navbar navbar-inverse navbar-fixed-top">
-            <div class="container">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#">XDCCD</a>
-                </div>
-                <div id="navbar" class="collapse navbar-collapse">
-                    <ul class="nav navbar-nav">
-                        <li class="active"><a href="#">Home</a></li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-      -->
-
         <div class="container">
           <div class="row" ng-controller="BotContextCtrl">
             <script type="text/ng-template" id="joinChannel.html">
@@ -154,7 +132,7 @@
                           <tr ng-repeat="bot in bots">
                               <td>{{ bot.id }}</td>
                               <td>{{ bot.botname }}</td>
-                              <td>{{ bot.host }}</td>
+                              <td><img src="/img/load.gif" title="Connecting ..." ng-show="bot.connection_state == 1"/><i class="glyphicon glyphicon-ok-sign" ng-show="bot.connection_state == 2" title="Connected!"></i> {{ bot.host }}</td>
                               <td>{{ bot.channels.join(', ') }}</td>
                               <td>{{ bot.announces }}</td>
                               <td>
