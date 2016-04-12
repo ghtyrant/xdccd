@@ -15,11 +15,18 @@ typedef std::function<void (const std::string&)> read_handler_t;
 typedef std::function<void (void)> write_handler_t;
 typedef std::function<void (void)> connected_handler_t;
 
-namespace connection_limits
+namespace connection
 {
 static const std::chrono::milliseconds MIN_RECONNECT_DELAY(500);
 static const std::chrono::seconds MAX_RECONNECT_DELAY(120);
 static const std::chrono::seconds READ_TIMEOUT(120);
+
+enum STATE
+{
+    IDLE,
+    CONNECTING,
+    CONNECTED
+};
 }
 
 class IRCConnection
@@ -38,12 +45,13 @@ class IRCConnection
         const std::string &get_host() const;
         const std::string &get_port() const;
         std::string get_local_ip() const;
+        connection::STATE get_state() const;
 
     private:
         std::string host;
         std::string port;
         bool use_ssl;
-        bool connected;
+        connection::STATE state;
 
         std::mutex io_lock;
         boost::asio::io_service io_service;

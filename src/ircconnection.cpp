@@ -9,7 +9,7 @@ xdccd::IRCConnection::IRCConnection(const std::string &host, std::string port, c
     : host(host),
     port(port),
     use_ssl(use_ssl),
-    connected(false),
+    state(connection::IDLE),
     resolver(io_service),
     work(std::make_unique<boost::asio::io_service::work>(io_service)),
     read_handler(read_handler),
@@ -32,11 +32,9 @@ void xdccd::IRCConnection::connect()
     boost::asio::ip::tcp::resolver::query query(host, port);
     boost::system::error_code error = boost::asio::error::host_not_found;
 
-    BOOST_LOG_TRIVIAL(debug) << "Trying to resolve " << host << "...";
-    /*boost::asio::system_timer resolve_timeout(io_service);
-    resolve_timeout.expires_from_now(xdccd::connection_limits::READ_TIMEOUT);
-    resolve_timeout.async_wait([this, &resolver](const boost::system::error_code& error){ if (!error) { resolver.cancel(); start_reconnect_timer(); } });*/
+    state = connection::CONNECTING;
 
+    BOOST_LOG_TRIVIAL(debug) << "Trying to resolve " << host << "...";
     resolver.async_resolve(query,
         boost::bind(&xdccd::IRCConnection::on_resolved, this,
             boost::asio::placeholders::error,
@@ -65,12 +63,12 @@ void xdccd::IRCConnection::on_resolved(const boost::system::error_code& err, boo
         return;
     }
 
-    reconnect_delay = xdccd::connection_limits::MIN_RECONNECT_DELAY;
-
-    connected = true;
+    reconnect_delay = xdccd::connection::MIN_RECONNECT_DELAY;
 
     // Inform the bot about the succesful connection
     connected_handler();
+
+    state = connection::CONNECTED;
 
     // Start the async read loop
     socket->async_read_until(
@@ -84,23 +82,11 @@ void xdccd::IRCConnection::on_resolved(const boost::system::error_code& err, boo
 
 void xdccd::IRCConnection::run()
 {
-    if (!connected)
-    {
-        BOOST_LOG_TRIVIAL(warning) << "Not connected, connectinendfgjdofgjeng!";
-        connect();
-    }
+    connect();
 
-    BOOST_LOG_TRIVIAL(warning) << "IRCConnection::run()";
     while (!io_service.stopped() && io_service.run_one())
     {
         std::lock_guard<std::mutex> lock(io_lock);
-
-        if (!connected)
-        {
-            BOOST_LOG_TRIVIAL(warning) << "Not connected, connectinendfgjdofgjeng!";
-            connect();
-            continue;
-        }
 
         if (message_received)
         {
@@ -110,7 +96,7 @@ void xdccd::IRCConnection::run()
             message_received = false;
 
             // Restart timeout timer
-            timeout_timer.expires_from_now(xdccd::connection_limits::READ_TIMEOUT);
+            timeout_timer.expires_from_now(xdccd::connection::READ_TIMEOUT);
             timeout_timer.async_wait([this](const boost::system::error_code& error){ if (!error) { std::lock_guard<std::mutex> lock(timeout_lock); timeout_triggered = true; } });
             timeout_lock.unlock();
         }
@@ -151,6 +137,11 @@ void xdccd::IRCConnection::read(const boost::system::error_code& error, std::siz
                 boost::asio::placeholders::bytes_transferred)
         );
     }
+    else
+    {
+        BOOST_LOG_TRIVIAL(error) << "Read error: " << error.message();
+        start_reconnect_timer();
+    }
 }
 
 void xdccd::IRCConnection::write(const std::string &message)
@@ -177,10 +168,12 @@ void xdccd::IRCConnection::start_reconnect_timer()
     if (reconnect_timer.expires_from_now() > std::chrono::milliseconds::zero())
         return;
 
-    BOOST_LOG_TRIVIAL(info) << "Trying to reconnect again in " << reconnect_delay.count() << "ms ...";
 
     std::lock_guard<std::mutex> lock(timeout_lock);
-    reconnect_delay = reconnect_delay == std::chrono::milliseconds::zero() ? xdccd::connection_limits::MIN_RECONNECT_DELAY : reconnect_delay * 2;
+    reconnect_delay = reconnect_delay == std::chrono::milliseconds::zero() ? xdccd::connection::MIN_RECONNECT_DELAY : reconnect_delay * 2;
+
+    BOOST_LOG_TRIVIAL(info) << "Trying to reconnect again in " << reconnect_delay.count() << "ms ...";
+
     reconnect_timer.expires_from_now(reconnect_delay);
     reconnect_timer.async_wait([this](const boost::system::error_code& error){ if (!error) { BOOST_LOG_TRIVIAL(info) << "Reconnecting ..."; this->connect(); } else { BOOST_LOG_TRIVIAL(info) << "Error reconnecting!"; } });
 }
@@ -208,5 +201,10 @@ const std::string &xdccd::IRCConnection::get_port() const
 std::string xdccd::IRCConnection::get_local_ip() const
 {
     return socket->get_address();
+}
+
+xdccd::connection::STATE xdccd::IRCConnection::get_state() const
+{
+    return state;
 }
 
