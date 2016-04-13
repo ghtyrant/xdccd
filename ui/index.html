@@ -170,6 +170,7 @@
                                 <th>Server</th>
                                 <th>Size</th>
                                 <th>Percent</th>
+                                <th ng-show="file.state == 2">Speed</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -189,6 +190,7 @@
                                     </div>
                                   </div> 
                                 </td>
+                                <td ng-show="file.state == 2">{{ file.bytes_per_second / 1024 | number:2 }} kB/s</td>
                                 <td>
                                   <div class="btn-group">
                                     <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
