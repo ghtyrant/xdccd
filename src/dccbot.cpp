@@ -101,7 +101,7 @@ void xdccd::DCCBot::read_handler(const std::string &message)
 
 void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
 {
-    BOOST_LOG_TRIVIAL(info) << "CTCP-Message: " << msg.ctcp_command << " says: '" << msg.params[1] << "'";
+    BOOST_LOG_TRIVIAL(info) << "CTCP-Message: " << msg.ctcp_command << " says: '" << msg.params[1] << "' (CTCP-Param[0] = '" << msg.ctcp_params[0] << "')";
 
     if (msg.ctcp_command == "DCC")
     {
@@ -122,7 +122,7 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
             }
             else
             {
-                unsigned long int_ip = std::stol(ip);
+                unsigned long int_ip = std::stoul(ip);
                 boost::asio::ip::address_v4 tmp(int_ip);
                 addr = boost::asio::ip::address(tmp);
             }
