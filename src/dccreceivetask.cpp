@@ -94,21 +94,26 @@ boost::system::error_code xdccd::DCCReceiveTask::download(boost::asio::ip::tcp::
 {
     boost::system::error_code error;
     error.assign(boost::system::errc::success, boost::system::system_category());
-    std::array<char, 8196> buffer;
+    std::array<char, 65536> buffer;
     float old_percent = 0.0f;
 
+    std::size_t tmp_len = 0;
+    auto start = std::chrono::system_clock::now();
     while (!stop)
     {
-        auto start = std::chrono::system_clock::now();
-
         std::size_t len = socket.read_some(boost::asio::buffer(buffer), error);
+        tmp_len += len;
         file->received += len;
         file->write(buffer.data(), len);
 
-        auto end = std::chrono::system_clock::now();
-        std::chrono::duration<float, std::milli> elapsed = end - start;
+        std::chrono::duration<float, std::milli> elapsed = std::chrono::system_clock::now() - start;
 
-        file->bytes_per_second = (len / elapsed.count()) * 1000.0;
+        if (elapsed.count() >= 1000.0)
+        {
+            file->bytes_per_second = (tmp_len / elapsed.count()) * 1000.0;
+            tmp_len = 0;
+            start = std::chrono::system_clock::now();
+        }
 
         // Send back how much we've downloaded in total
         // This has to be a 32bit integer, because DCC is old and sucks
