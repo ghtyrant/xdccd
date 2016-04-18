@@ -178,7 +178,7 @@
                                 <td>{{ file.id }}</td>
                                 <td ng-show="file.passive"><span class="label label-warning">Passive</span>
                                 <td ng-show="!file.passive"><span class="label label-info">Active</span>
-                                <td>{{ file.filename }}</td>
+                                <td style="word-break: break-all;">{{ file.filename }}</td>
                                 <td>{{ file.bot.botname }}</td>
                                 <td>{{ file.bot.host }}</td>
                                 <td>{{ file.received / 1024 / 1024 | number:2 }}/{{ file.filesize / 1024 / 1024 | number:2 }} MB</td>
@@ -221,14 +221,17 @@
                             </tr>
                           </thead>
                           <tbody>
-                            <td><input type="text" class="form-control" id="queryString" placeholder="Search..." ng-model="query"></td>
-                            <td><button type="submit" class="btn btn-default btn-s" ng-click="on_search(query, 0)">Search</button></td>
+                            <td>
+                              <input type="text" class="form-control" id="queryString" placeholder="Search..." ng-model="query" ng-disabled="loading == true">
+                            </td>
+                            <td><button type="submit" class="btn btn-default btn-s" ng-click="on_search(query, 0)" ng-disabled="loading == true">Search</button></td>
                           </tbody>
                         </table>
                       </form>
                   </div>
                   <div class="row" ng-controller="VideoContextCtrl">
-                    <i ng-show="!search.results.length">No search Results</i>
+                    <i ng-show="!search.results.length && loading == false">No search Results</i>
+                    <img src="/img/load.gif" ng-show="loading == true"/>
                     <table class="table table-striped" id="cnt1" ng-hide="!search.results.length">
                       <thead>
                             <tr>
@@ -241,7 +244,7 @@
                         </thead>
                         <tbody>
                             <tr ng-repeat="res in search.results">
-                              <td>{{ res.name }}</td>
+                              <td style="word-break: break-all;">{{ res.name }}</td>
                               <td>{{ res.size }}</td>
                               <td>{{ res.download_count }}x</td>
                               <td>{{ res.score }}</td>

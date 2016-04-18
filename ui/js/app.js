@@ -227,8 +227,11 @@ app.controller('BotContextCtrl', function($scope, $uibModal, apiService, sharedD
 
 app.controller('SearchCtrl', function($scope, apiService){
   $scope.search = [];
+  $scope.loading = false;
+
   $scope.on_search = function(query, start) {
-    apiService.searchFile(query, start).then(function(result) { $scope.search = result });;
+    $scope.loading = true;
+    apiService.searchFile(query, start).then(function(result) { $scope.search = result; $scope.loading = false; });;
   };
   
   $scope.add_download = function(request) {
