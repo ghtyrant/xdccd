@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <chrono>
 
 #include "dccreceivetask.h"
 #include "logging.h"
@@ -98,10 +99,19 @@ boost::system::error_code xdccd::DCCReceiveTask::download(boost::asio::ip::tcp::
 
     while (!stop)
     {
+        auto start = std::chrono::system_clock::now();
+
         std::size_t len = socket.read_some(boost::asio::buffer(buffer), error);
         file->received += len;
         file->write(buffer.data(), len);
 
+        auto end = std::chrono::system_clock::now();
+        std::chrono::duration<float, std::milli> elapsed = end - start;
+
+        file->bytes_per_second = (len / elapsed.count()) * 1000.0;
+
+        // Send back how much we've downloaded in total
+        // This has to be a 32bit integer, because DCC is old and sucks
         uint32_t total = htonl(file->received);
         boost::asio::write(socket, boost::asio::buffer(&total, sizeof(total)));
 

@@ -40,7 +40,9 @@ class Threadpool
         {
             std::lock_guard<std::mutex> lock(mutex);
 
-            if (available == 0) return;
+            if (available == 0)
+                return;
+
             available--;
 
             io_service.post(boost::bind(&Threadpool::wrap_task, this,

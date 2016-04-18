@@ -43,6 +43,11 @@ void xdccd::DCCBot::read_handler(const std::string &message)
         return;
     }
 
+    if (std::all_of(msg.command.begin(), msg.command.end(), [](char c){return std::isdigit(c);}))
+    {
+        BOOST_LOG_TRIVIAL(warning) << "Server-Response: " << message;
+    }
+
     // 001 is the server's welcome message
     if (msg.command == "001")
     {
@@ -93,9 +98,17 @@ void xdccd::DCCBot::read_handler(const std::string &message)
         {
             on_ctcp(msg);
             return;
-        ;}
+        }
 
         on_privmsg(msg);
+
+        if (msg.params[0] == nickname)
+            BOOST_LOG_TRIVIAL(info) << "Received private message: " << message;
+    }
+
+    if (msg.command == "NOTICE")
+    {
+        BOOST_LOG_TRIVIAL(info) << "Received notice: " << message;
     }
 }
 
@@ -198,6 +211,9 @@ void xdccd::DCCBot::on_connected()
 void xdccd::DCCBot::on_welcome()
 {
     BOOST_LOG_TRIVIAL(info) << "Connected bot " << *this;
+
+    // Remove leftover channels
+    channels.clear();
 
     for (auto channel_name : channels_to_join)
         connection.write("JOIN " + channel_name);

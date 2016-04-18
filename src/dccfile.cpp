@@ -7,7 +7,7 @@ xdccd::DCCFile::DCCFile(file_id_t id, const std::string &bot, const std::string 
 }
 
 void xdccd::DCCFile::open()
-{ 
+{
     stream.open(path, std::ios::binary);
 }
 
@@ -20,4 +20,3 @@ void xdccd::DCCFile::write(const char* data, std::streamsize len)
 {
   stream.write(data, len);
 }
-

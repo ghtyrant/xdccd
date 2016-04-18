@@ -32,12 +32,12 @@ class DCCFile
         std::string filename;
         std::uintmax_t size;
         std::uintmax_t received;
+        std::size_t bytes_per_second;
         bool transfer_started;
         boost::filesystem::path path;
         boost::filesystem::ofstream stream;
         FileState state;
         bool passive;
-
 };
 
 typedef std::shared_ptr<DCCFile> DCCFilePtr;
