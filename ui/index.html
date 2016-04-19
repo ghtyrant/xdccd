@@ -13,7 +13,7 @@
         <link rel="stylesheet" href="css/angularchartmin.css">
         <script type="text/javascript" src="js/chartmin.js"></script>
         <script type="text/javascript" src="js/angularchartmin.js"></script>
-        <!--<link rel="stylesheet" href="css/style.css">-->
+        <link rel="stylesheet" href="css/style.css">
 
         <script src="js/app.js"></script>
 
@@ -24,12 +24,9 @@
             <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
             <![endif]-->
         <style>
-          .progress {
-            margin-bottom: 0 !important;
-            margin-left: -50%;
-          }
         </style>
     </head>
+
     <body>
         <div class="container">
           <div class="row" ng-controller="BotContextCtrl">
@@ -155,43 +152,29 @@
               </uib-tab>
 
               <uib-tab index="1">
-                  <uib-tab-heading><i class="glyphicon glyphicon-download-alt"></i> Downloads <span class="badge alert-warning" ng-show="download_stat.active_downloads > 0">{{ download_stat.active_downloads }}</span> <span class="badge alert-success" ng-show="download_stat.finished_downloads > 0">{{ download_stat.finished_downloads }}</span> <span class="badge alert-info" ng-show="download_stat.all_downloads > 0">{{ download_stat.all_downloads }}</span></uib-tab-heading>
+                  <uib-tab-heading><i class="glyphicon glyphicon-download-alt"></i> Downloads <span class="badge alert-warning" ng-show="download_stat.active_downloads.length > 0">{{ download_stat.active_downloads.length }}</span> <span class="badge alert-success" ng-show="download_stat.finished_downloads.length > 0">{{ download_stat.finished_downloads.length }}</span> <span class="badge alert-info" ng-show="download_stat.total_downloads_count > 0">{{ download_stat.total_downloads_count }}</span></uib-tab-heading>
 
                 <div class="col-lg-12" ng-controller="StatusCtrl">
-                    <h2>Downloads</h2>
-                    <i ng-show="!downloads.length">No files exist!</i>
-                    <table class="table table-striped" id="cnt1" ng-hide="!downloads.length">
+                    <h2>Active</h2>
+
+                    <i ng-show="!download_stat.active_downloads.length">No files exist!</i>
+                    <table class="table table-condensed" id="cnt1" ng-hide="!download_stat.active_downloads.length">
                         <thead>
                             <tr>
-                                <th>#</th>
-                                <th>Mode</th>
-                                <th>Filename</th>
-                                <th>Bot</th>
-                                <th>Server</th>
-                                <th>Size</th>
-                                <th>Percent</th>
-                                <th ng-show="file.state == 2">Speed</th>
-                                <th></th>
+                                <th width="3%">#</th>
+                                <th width="75%">Filename</th>
+                                <th width="8%">Bot</th>
+                                <th width="10%">Size</th>
+                                <th width="5%"></th>
                             </tr>
                         </thead>
-                        <tbody>
-                          <tr ng-repeat="file in downloads">
-                                <td>{{ file.id }}</td>
-                                <td ng-show="file.passive"><span class="label label-warning">Passive</span>
-                                <td ng-show="!file.passive"><span class="label label-info">Active</span>
-                                <td style="word-break: break-all;">{{ file.filename }}</td>
-                                <td>{{ file.bot.botname }}</td>
-                                <td>{{ file.bot.host }}</td>
-                                <td>{{ file.received / 1024 / 1024 | number:2 }}/{{ file.filesize / 1024 / 1024 | number:2 }} MB</td>
-                                <td>
-                                  <div class="progress">
-                                    <div class="progress-bar progress-bar-striped" ng-class="{'active': file.received < file.size}" role="progressbar" aria-valuenow="{{ file.received_percent }}" aria-valuemin="0" aria-valuemax="100" ng-style="{width: ( file.received_percent + '%' ) }">
-                                      {{ file.received_percent | number:2 }}%
-                                    </div>
-                                  </div> 
-                                </td>
-                                <td ng-show="file.state == 2">{{ file.bytes_per_second / 1024 | number:2 }} kB/s</td>
-                                <td>
+                        <tbody ng-repeat="file in download_stat.active_downloads">
+                        	<tr class="active">
+                               	<td rowspan="2">{{ file.id }}</td>
+                               	<td style="word-break: break-all;"><b>{{ file.filename }}</b></td>
+                               	<td>{{ file.bot.botname }}</td>
+                               	<td>{{ file.filesize / 1024 / 1024 | number:2 }} MB</td>
+                               	<td>
                                   <div class="btn-group">
                                     <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                       <i class="glyphicon glyphicon-cog"></i> <span class="caret"></span>
@@ -204,8 +187,54 @@
                                   </div>
                                 </td>
                             </tr>
+                            <tr class="warning">
+                                <td colspan="2">
+                                  <div class="progress">
+                                    <div class="progress-bar" ng-class="{'active': file.received < file.filesize}" role="progressbar" aria-valuenow="{{ file.received_percent }}" aria-valuemin="0" aria-valuemax="100" ng-style="{width: ( file.received_percent + '%' ) }">
+                                      <span class="show">{{ file.received_percent | number:2 }}% - {{ file.received / 1024 / 1024 | number:2 }} MB - {{ file.time_left | secondsToDateTime | date:'HH:mm:ss'}}</span>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td>{{ file.bytes_per_second / 1024 | number:2 }} kB/s</td>
+                                <td ng-show="file.passive"><span class="label label-warning">Passive</span></td>
+                                <td ng-show="!file.passive"><span class="label label-info">Active</span></td>
+                            </tr>
                         </tbody>
                     </table>
+
+                    <h2>Finished</h2>
+                    <table class="table table-condensed" id="cnt1">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Filename</th>
+                                <th>Finished</th>
+                                <th>Size</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        	<tr class="active" ng-repeat="file in download_stat.finished_downloads">
+                               	<td>{{ $index }}</td>
+                               	<td style="word-break: break-all;">{{ file.filename }}</td>
+                               	<td>13.4.2016 15:23</td>
+                               	<td>{{ file.filesize / 1024 / 1024 | number:2 }} MB</td>
+                               	<td>
+                                  <div class="btn-group">
+                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                      <i class="glyphicon glyphicon-cog"></i> <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                      <li><a href="#" ng-click="cancelDownload(file)" ng-if="file.state == 2 || file.state == 0 || file.state == 1">Cancel</a></li>
+                                      <li><a href="#" ng-click="removeFromList(file)" ng-if="file.state == 3 || file.state == 4">Delete from list</a></li>
+                                      <li><a href="#" ng-click="removeFromDisk(file)" ng-if="file.state == 3 || file.state == 4">Delete from disk</a></li>
+                                    </ul>
+                                  </div>
+                                </td>
+                            </tr>
+                    	</tbody>
+                	</table>
                 </div>
               </uib-tab>
 
@@ -255,6 +284,7 @@
                                   <button class="btn btn-default btn-xs" ng-click="openVideoModal(res)" ng-show="{{ res.name.endsWithLastIndexOf('mp4') }}"><i class="glyphicon glyphicon-film"></i></button>
                               </td>
                             </tr>
+                        </tbody>
                     </table>
                     <div class="row text-center">
                      <ul class="pagination" ng-hide="!search.results.length">
@@ -276,6 +306,8 @@
                   <p>Disk usage, total transmitted bytes, version, ...</p>
                 </div>
               </uib-tab>
+
+              <uib-tab-heading class="pull-right"><span class="label label-success">Total speed: {{ download_stat.total_bps / 1024 / 1024| number:2 }} MB/s</span></uib-tab-heading>
             </uib-tabset>
           </div>
         </div>

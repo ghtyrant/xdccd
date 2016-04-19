@@ -73,11 +73,21 @@ app.factory('apiService', function($http) {
 
 app.factory('sharedDataService' , function () {
      var download_stat = {
-        all_downloads: 0,
-        active_downloads: 0,
-        finished_downloads: 0
+        total_downloads_count: 0,
+        total_bps: 0,
+
+        active_downloads: [],
+        finished_downloads: []
     };
     return download_stat;
+});
+
+app.filter('secondsToDateTime', function() {
+    return function(seconds) {
+        var d = new Date(0,0,0,0,0,0,0);
+        d.setSeconds(seconds);
+        return d;
+    };
 });
 
 app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, sharedDataService) {
@@ -87,31 +97,32 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
     apiService.getBots().then(function(bots) {
       $scope.bots = bots;
 
-      var downloads = [];
+      var active_downloads = [];
+      var finished_downloads = [];
+      var total_bps = 0;
+
       for (var i = 0; i < bots.length; i++) {
         for (var j = 0; j < bots[i].downloads.length; j++) {
           var dl = bots[i].downloads[j];
           dl["bot"] = bots[i];
-          downloads.push(dl);
-        }
-      }
-      var active_downloads = 0;
-      var finished_downloads = 0;
-      for(var i = 0; i < downloads.length; i++) {
-        if(downloads[i].state == 3)
-        {
-          finished_downloads += 1;
-        }
-        if(downloads[i].state == 2)
-        {
-          active_downloads += 1;
+
+          if(dl.state == 3)
+          {
+            finished_downloads.push(dl);
+          }
+          else if(dl.state == 2)
+          {
+            active_downloads.push(dl);
+            total_bps += dl.bytes_per_second;
+            dl["time_left"] = (dl.filesize - dl.received) / dl.bytes_per_second;
+          }
         }
       }
 
-      $scope.downloads = downloads;
-      $scope.download_stat.all_downloads = downloads.length;
       $scope.download_stat.active_downloads = active_downloads;
+      $scope.download_stat.total_bps = total_bps;
       $scope.download_stat.finished_downloads = finished_downloads;
+      $scope.download_stat.total_downloads_count = active_downloads.length + finished_downloads.length;
     });
   };
 
@@ -132,50 +143,13 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
     console.log("To be implemented");
   };
 
-  // Function to replicate setInterval using $timeout service.
-  /*$scope.intervalFunction = function(){
-    $timeout(function() {
-      $scope.getBots();
-      $scope.intervalFunction();
-    }, 3000)
-  };
-  */
   $scope.intervalFunction = function()
   {
-    $interval(function(){
-    apiService.getBots().then(function(bots) {
-      $scope.bots = bots;
-
-      var downloads = [];
-      for (var i = 0; i < bots.length; i++) {
-        for (var j = 0; j < bots[i].downloads.length; j++) {
-          var dl = bots[i].downloads[j];
-          dl["bot"] = bots[i];
-          downloads.push(dl);
-        }
-      }
-      var active_downloads = 0;
-      var finished_downloads = 0;
-      for(var i = 0; i < downloads.length; i++) {
-        if(downloads[i].state == 3)
-        {
-          finished_downloads += 1;
-        }
-        if(downloads[i].state == 2)
-        {
-          active_downloads += 1;
-        }
-      }
-
-      $scope.downloads = downloads;
-      $scope.download_stat.all_downloads = downloads.length;
-      $scope.download_stat.active_downloads = active_downloads;
-      $scope.download_stat.finished_downloads = finished_downloads;
-    });
-  },3000)
+    $interval(function(){ $scope.getBots() }, 3000)
   };
 
   $scope.getBots();
+
   // Kick off the interval
   $scope.intervalFunction();
 });
@@ -231,9 +205,9 @@ app.controller('SearchCtrl', function($scope, apiService){
 
   $scope.on_search = function(query, start) {
     $scope.loading = true;
-    apiService.searchFile(query, start).then(function(result) { $scope.search = result; $scope.loading = false; });;
+    apiService.searchFile(query, start).then(function(result) { $scope.search = result; $scope.loading = false; });
   };
-  
+
   $scope.add_download = function(request) {
     apiService.requestFile(request.bot_id, request.bot, request.slot);
   };
@@ -241,9 +215,7 @@ app.controller('SearchCtrl', function($scope, apiService){
   $scope.get_paginations = function(results) {
     if(results != null)
     {
-      x = new Array(Math.floor(results/25) + ((results % 25) > 0)); 
-      console.log(x);
-      return x;
+      return new Array(Math.floor(results/25) + ((results % 25) > 0));
     }
   };
 });
