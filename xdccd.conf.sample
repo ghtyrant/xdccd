@@ -1,0 +1,26 @@
+{
+    "download_path": "/home/user/downloads",
+
+    "api":
+    {
+        "port": 1984,
+        "host": "127.0.0.1"
+    },
+
+    "bots":
+    {
+        "mybot":
+        {
+            "host": "irc.example.com",
+            "port": 6667
+        },
+
+        "myotherbot":
+        {
+            "host": "irc.example.net",
+            "port": 9999,
+            "ssl": true,
+            "channels": [ "#channel1", "#channel2" ]
+        }
+    }
+}
