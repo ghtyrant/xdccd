@@ -16,8 +16,8 @@ using namespace std::chrono_literals;
 
 bool xdccd::API::quit = false;
 
-xdccd::API::API()
-    : manager(10)
+xdccd::API::API(Config &config)
+    : config(config), manager(10)
 {
 }
 
@@ -312,7 +312,11 @@ void xdccd::API::stop()
 void xdccd::API::run()
 {
     auto settings = std::make_shared<restbed::Settings>();
-    settings->set_port(1984);
+    int port = config["api"].get("port", 1984).asInt();
+    settings->set_port(port);
+    std::string bind_address = config["api"].get("host", "127.0.0.1").asString();
+    settings->set_bind_address(bind_address);
+
     //ONLY FOR TESTING PURPOSE
     settings->set_default_header("Access-Control-Allow-Origin", "*");
     settings->set_default_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -371,9 +375,16 @@ void xdccd::API::run()
     resource->set_method_handler("GET", std::bind(&API::shutdown_handler, this, std::placeholders::_1));
     service.publish(resource);
 
-    BOOST_LOG_TRIVIAL(info) << "Starting up REST API ...";
+    BOOST_LOG_TRIVIAL(info) << "Starting up REST API on http://" << bind_address << ":" << port << " ...";
 
     // Start scheduled task to check if we should stop
     service.schedule([this](){ if (xdccd::API::quit) { service.stop(); } }, 200ms);
-    service.start(settings);
+
+    try
+    {
+        service.start(settings);
+    } catch (const std::system_error &e)
+    {
+        BOOST_LOG_TRIVIAL(error) << "Error starting API: " << e.code().message() << " (error " << e.code().value() << ")";
+    }
 }

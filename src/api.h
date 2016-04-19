@@ -4,6 +4,7 @@
 
 #include "botmanager.h"
 #include "searchcache.h"
+#include "config.h"
 
 namespace xdccd
 {
@@ -14,7 +15,7 @@ class API
     public:
         static bool quit;
 
-        API();
+        API(Config &config);
         void run();
         void stop();
 
@@ -33,6 +34,7 @@ class API
         void shutdown_handler(std::shared_ptr<restbed::Session> session);
 
     private:
+		Config config;
         BotManager manager;
         SearchCache search;
         restbed::Service service;

@@ -1,8 +1,10 @@
 #include <iostream>
 #include <chrono>
+#include <vector>
 
 #include "api.h"
 #include "logging.h"
+#include "config.h"
 
 void signal_handler(int signal)
 {
@@ -18,9 +20,47 @@ int main(int argc, char* argv[])
     BOOST_LOG_TRIVIAL(debug) << "Starting up xdccd!";
 
     std::signal(SIGINT, signal_handler);
-    xdccd::API api;
-    api.get_bot_manager().launch_bot("irc.abjects.net", "6667", "nnkhsdfsd2", { "#moviegods", "#mg-chat" }, false);
-    //api.get_bot_manager().launch_bot("localhost", "6667", "nnkh", { "#moviegods", "#mg-chat" }, false);
+
+    xdccd::Config config;
+    config.load();
+
+    // Start API
+    xdccd::API api(config);
+
+    // Start bots defined in config file
+    Json::Value bots = config["bots"];
+    if (!bots.isNull())
+    {
+        if (!bots.isObject())
+        {
+            BOOST_LOG_TRIVIAL(error) << "Configuration error: 'bots' has to be an object!";
+            return 0;
+        }
+
+        for(Json::ValueIterator it = bots.begin() ; it != bots.end() ; ++it)
+        {
+            Json::Value bot = *it;
+            std::string bot_name = it.key().asString();
+
+            if (bot["host"].isNull() || bot["port"].isNull())
+            {
+                BOOST_LOG_TRIVIAL(error) << "Configuration error: bot '" << bot_name << "' is missing 'host' or 'port'!";
+                return 1;
+            }
+
+            std::string host = bot["host"].asString();
+            std::string port = bot["port"].asString();
+
+            bool ssl = bot.get("ssl", false).asBool();
+            std::vector<std::string> channels;
+            if (!bot["channels"].isNull() && bot["channels"].isArray())
+                for(auto channel : bot["channels"])
+                    channels.push_back(channel.asString());
+
+            api.get_bot_manager().launch_bot(host, port, bot_name, channels, ssl);
+        }
+    }
+
     api.run();
 
     BOOST_LOG_TRIVIAL(info) << "Quitting ...";
