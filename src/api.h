@@ -15,7 +15,7 @@ class API
     public:
         static bool quit;
 
-        API(Config &config);
+        API(const std::string &bind_address, int port, const boost::filesystem::path &download_path);
         void run();
         void stop();
 
@@ -34,7 +34,9 @@ class API
         void shutdown_handler(std::shared_ptr<restbed::Session> session);
 
     private:
-		Config config;
+        std::string bind_address;
+        int port;
+        boost::filesystem::path download_path;
         BotManager manager;
         SearchCache search;
         restbed::Service service;

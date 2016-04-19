@@ -307,7 +307,7 @@
                 </div>
               </uib-tab>
 
-              <uib-tab-heading class="pull-right"><span class="label label-success">Total speed: {{ download_stat.total_bps / 1024 / 1024| number:2 }} MB/s</span></uib-tab-heading>
+              <span class="pull-right label label-success" ng-controller="StatusCtrl">{{ download_stat.total_bps / 1024 / 1024| number:2 }} MB/s | {{total_announces}} Files | {{ total_size / 1024 / 1024| number:2 }} GB</span>
             </uib-tabset>
           </div>
         </div>

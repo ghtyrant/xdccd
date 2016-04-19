@@ -12,9 +12,9 @@ xdccd::BotManager::~BotManager()
         bot->stop();
 }
 
-void xdccd::BotManager::launch_bot(const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl)
+void xdccd::BotManager::launch_bot(const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl, const boost::filesystem::path &download_path)
 {
-    DCCBotPtr bot = std::make_shared<DCCBot>(last_bot_id++, host, port, nick, channels, use_ssl);
+    DCCBotPtr bot = std::make_shared<DCCBot>(last_bot_id++, host, port, nick, channels, use_ssl, download_path);
     bots.push_back(bot);
 
     BOOST_LOG_TRIVIAL(info) << "Launching bot " << bot;

@@ -16,8 +16,8 @@ using namespace std::chrono_literals;
 
 bool xdccd::API::quit = false;
 
-xdccd::API::API(Config &config)
-    : config(config), manager(10)
+xdccd::API::API(const std::string &bind_address, int port, const boost::filesystem::path &download_path)
+    : bind_address(bind_address), port(port), download_path(download_path), manager(10)
 {
 }
 
@@ -79,6 +79,7 @@ void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
         child["connection_state"] = bot->get_connection_state();
         child["host"] = bot->get_host() + ":" + bot->get_port();
         child["announces"] = static_cast<Json::UInt64>(bot->get_announces().size());
+        child["total_size"] = static_cast<Json::UInt64>(bot->get_total_size());
 
         for (auto channel_name : bot->get_channels())
         {
@@ -147,7 +148,7 @@ void xdccd::API::connect_handler(std::shared_ptr<restbed::Session> session)
         for (Json::ArrayIndex i = 0; i < channel_list.size(); ++i)
             channels.push_back(channel_list[i].asString());
 
-        manager.launch_bot(root["server"].asString(), "6667", root["nickname"].asString(), channels, false);
+        manager.launch_bot(root["server"].asString(), "6667", root["nickname"].asString(), channels, false, download_path);
 
         session->close(restbed::OK);
     } );
@@ -312,9 +313,7 @@ void xdccd::API::stop()
 void xdccd::API::run()
 {
     auto settings = std::make_shared<restbed::Settings>();
-    int port = config["api"].get("port", 1984).asInt();
     settings->set_port(port);
-    std::string bind_address = config["api"].get("host", "127.0.0.1").asString();
     settings->set_bind_address(bind_address);
 
     //ONLY FOR TESTING PURPOSE

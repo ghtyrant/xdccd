@@ -20,7 +20,7 @@ enum FileState
 class DCCFile
 {
     public:
-        DCCFile(file_id_t id, const std::string &bot, const std::string &ip, const std::string &port, const std::string &filename, std::uintmax_t size);
+        DCCFile(file_id_t id, const std::string &bot, const std::string &ip, const std::string &port, const boost::filesystem::path &base_path, const std::string &filename, std::uintmax_t size);
         void open();
         void close();
         void write(const char* data, std::streamsize len);

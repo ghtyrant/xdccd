@@ -26,6 +26,7 @@ struct DCCAnnounce
     std::string size;
     std::string slot;
     std::string download_count;
+    std::size_t num_size;
 
     bool compare(const std::string &other) const;
 };
@@ -35,7 +36,7 @@ typedef std::shared_ptr<DCCAnnounce> DCCAnnouncePtr;
 class DCCBot : public Logable<DCCBot>
 {
     public:
-        DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl);
+        DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl, const boost::filesystem::path &download_path);
         void read_handler(const std::string &message);
         void run();
         void stop();
@@ -58,6 +59,7 @@ class DCCBot : public Logable<DCCBot>
         void change_nick(const std::string &nick);
         virtual std::string to_string() const;
         connection::STATE get_connection_state() const;
+        std::uintmax_t get_total_size() const;
 
         static xdccd::logger_type_t logger;
 
@@ -69,12 +71,14 @@ class DCCBot : public Logable<DCCBot>
         file_id_t last_file_id;
         std::string nickname;
         xdccd::IRCConnection connection;
+        boost::filesystem::path download_path;
         std::vector<DCCFilePtr> files;
         std::mutex files_lock;
         Threadpool threadpool;
         std::vector<std::string> channels;
         std::vector<std::string> channels_to_join;
         std::map<std::string, DCCAnnouncePtr> announces;
+        std::uintmax_t total_size;
 };
 
 typedef std::shared_ptr<DCCBot> DCCBotPtr;

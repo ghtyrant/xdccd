@@ -1,6 +1,8 @@
 #include <iostream>
 #include <chrono>
 #include <vector>
+#include <unistd.h>
+#include <boost/filesystem.hpp>
 
 #include "api.h"
 #include "logging.h"
@@ -24,8 +26,31 @@ int main(int argc, char* argv[])
     xdccd::Config config;
     config.load();
 
+    if (config["download_path"].isNull())
+    {
+        BOOST_LOG_TRIVIAL(error) << "Configuration error: 'download_path' is missing!";
+        return 1;
+    }
+
+    boost::filesystem::path download_path(config["download_path"].asString());
+
+    // Download path sanity checks
+    if (!boost::filesystem::exists(download_path) || !boost::filesystem::is_directory(download_path))
+    {
+        BOOST_LOG_TRIVIAL(error) << "Configuration error: download_path not found or not a directory: " << download_path.string();
+        return 1;
+    }
+
+    if (access(download_path.c_str(), W_OK | X_OK) != 0)
+    {
+        BOOST_LOG_TRIVIAL(error) << "Configuration error: Insufficient permissions to write to download_path: " << download_path.string();
+        return 1;
+    }
+
     // Start API
-    xdccd::API api(config);
+    std::string bind_address = config["api"].get("host", "127.0.0.1").asString();
+    int port = config["api"].get("port", 1984).asInt();
+    xdccd::API api(bind_address, port, download_path);
 
     // Start bots defined in config file
     Json::Value bots = config["bots"];
@@ -57,7 +82,7 @@ int main(int argc, char* argv[])
                 for(auto channel : bot["channels"])
                     channels.push_back(channel.asString());
 
-            api.get_bot_manager().launch_bot(host, port, bot_name, channels, ssl);
+            api.get_bot_manager().launch_bot(host, port, bot_name, channels, ssl, download_path);
         }
     }
 

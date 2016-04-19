@@ -15,7 +15,17 @@ xdccd::DCCAnnounce::DCCAnnounce(
         const std::string &slot,
         const std::string &download_count)
     : bot_id(bot_id), hash(bot_name+slot), bot_name(bot_name), filename(filename), size(size), slot(slot), download_count(download_count)
-{}
+{
+    std::string tmp = size;
+    std::size_t factor = 1;
+    if (tmp[tmp.size()-1] == 'M')
+        factor = 1024;
+    else if (tmp[tmp.size()-1] == 'G')
+        factor = 1024 * 1024;
+
+    tmp[tmp.size()-1] = '\0';
+    num_size = std::stoull(tmp) * factor;
+}
 
 bool xdccd::DCCAnnounce::compare(const std::string &other) const
 {
@@ -24,9 +34,10 @@ bool xdccd::DCCAnnounce::compare(const std::string &other) const
 
 xdccd::logger_type_t xdccd::DCCBot::logger(boost::log::keywords::channel = "DCCBot");
 
-xdccd::DCCBot::DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl)
+xdccd::DCCBot::DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl, const boost::filesystem::path &path)
     : id(id), last_file_id(0), nickname(nick), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), ([this]() { this->on_connected(); }), use_ssl),
-    threadpool(5), channels_to_join(channels)
+    download_path(path),
+    threadpool(5), channels_to_join(channels), total_size(0)
 {
     std::string result = boost::algorithm::join(channels, ", ");
     BOOST_LOG_TRIVIAL(info) << "Started " << *this << " for '" << host << ":" << port << "', called '" << nick  << "', auto-joining: " << result;
@@ -41,11 +52,6 @@ void xdccd::DCCBot::read_handler(const std::string &message)
     {
         connection.write("PONG " + msg.params[0]);
         return;
-    }
-
-    if (std::all_of(msg.command.begin(), msg.command.end(), [](char c){return std::isdigit(c);}))
-    {
-        BOOST_LOG_TRIVIAL(warning) << "Server-Response: " << message;
     }
 
     // 001 is the server's welcome message
@@ -179,7 +185,7 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
             // If not, add it anyway and wait for user interaction
             if (file_ptr == nullptr)
             {
-                file_ptr = std::make_shared<DCCFile>(last_file_id++, msg.nickname, addr.to_string(), port, filename, std::strtoumax(size.c_str(), nullptr, 10));
+                file_ptr = std::make_shared<DCCFile>(last_file_id++, msg.nickname, addr.to_string(), port, download_path, filename, std::strtoumax(size.c_str(), nullptr, 10));
                 file_ptr->state = xdccd::FileState::AWAITING_RESPONSE;
                 files.push_back(file_ptr);
             }
@@ -233,7 +239,7 @@ void xdccd::DCCBot::on_part(const std::string &channel)
 
 void xdccd::DCCBot::on_privmsg(const xdccd::IRCMessage &msg)
 {
-    static std::regex announce("#(\\d{1,3})\\s+(\\d+)x\\s+\\[\\s?(\\d+(?:\\.\\d+)?M|G)\\] (.*)", std::regex_constants::ECMAScript);
+    static std::regex announce("#(\\d{1,3})\\s+(\\d+)x\\s+\\[\\s?(\\d+(?:\\.\\d+)?[KMG])\\] (.*)", std::regex_constants::ECMAScript);
 
     std::smatch m;
     if (!std::regex_match(msg.params[1], m, announce))
@@ -252,6 +258,7 @@ void xdccd::DCCBot::on_privmsg(const xdccd::IRCMessage &msg)
 void xdccd::DCCBot::request_file(const std::string &nick, const std::string &slot)
 {
     BOOST_LOG_TRIVIAL(info) << "Requesting file in slot #" << slot << " from bot '" << nick << "' on " << *this;
+
     connection.write((boost::format("PRIVMSG %s :xdcc send #%s") % nick % slot).str());
 
     // Check if we already discovered the file the user wants to download
@@ -261,7 +268,7 @@ void xdccd::DCCBot::request_file(const std::string &nick, const std::string &slo
         return;
 
     // Yes, we have it, let's create the DCCFile for it now
-    DCCFilePtr file_ptr = std::make_shared<DCCFile>(last_file_id++, nick, "", "", announce->filename, 0);
+    DCCFilePtr file_ptr = std::make_shared<DCCFile>(last_file_id++, nick, "", "", download_path, announce->filename, 0);
     files.push_back(file_ptr);
 }
 
@@ -288,18 +295,26 @@ const std::string &xdccd::DCCBot::get_port() const
 void xdccd::DCCBot::add_announce(const std::string &bot, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count)
 {
     DCCAnnouncePtr announce = std::make_shared<DCCAnnounce>(id, bot, filename, size, slot, download_count);
-    announces[announce->hash] = announce;
+    total_size += announce->num_size;
+
+    auto old_announce = announces.find(announce->hash);
+    if (old_announce != announces.end())
+    {
+        total_size -= old_announce->second->num_size;
+        announces.insert(old_announce, std::pair<std::string, DCCAnnouncePtr>(announce->hash, announce));
+    }
+    else
+        announces[announce->hash] = announce;
 
     /*std::cout << "[Bot Announce] Bot: " << bot
         << ", File: " << filename
-        << ", Size: " << size
+        << ", Size: " << size << " (real: " << announce->num_size << ")"
         << " in slot #" << slot
         << ", downloaded " << download_count
         << " times (size: " << sizeof(*announce)
         << "b, total size ~ " << sizeof(*announce) * announces.size() + sizeof(announces)
         << "b, announces: " << announces.size()
-        << ")" << std::endl;
-        */
+        << ")" << std::endl;*/
 }
 
 xdccd::DCCAnnouncePtr xdccd::DCCBot::get_announce(const std::string &hash) const
@@ -355,4 +370,9 @@ std::string xdccd::DCCBot::to_string() const
 xdccd::connection::STATE xdccd::DCCBot::get_connection_state() const
 {
     return connection.get_state();
+}
+
+std::uintmax_t xdccd::DCCBot::get_total_size() const
+{
+    return total_size;
 }

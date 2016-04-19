@@ -101,7 +101,12 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
       var finished_downloads = [];
       var total_bps = 0;
 
+      $scope.total_size = 0;
+      $scope.total_announces = 0;
       for (var i = 0; i < bots.length; i++) {
+        $scope.total_size += bots[i].total_size;
+        $scope.total_announces += bots[i].announces;
+
         for (var j = 0; j < bots[i].downloads.length; j++) {
           var dl = bots[i].downloads[j];
           dl["bot"] = bots[i];
