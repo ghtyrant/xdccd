@@ -81,23 +81,26 @@ void xdccd::SearchCache::search_in_announces(const std::map<std::string, xdccd::
     // Iterate all announces
     for (auto announce : announces)
     {
-        unsigned int score = 0;
-
         // Split & iterate the filename by '.'
-        auto it = boost::algorithm::make_split_iterator(announce.second->filename, boost::algorithm::first_finder(".", boost::algorithm::is_equal()));
+        auto start_it = boost::algorithm::make_split_iterator(announce.second->filename, boost::algorithm::first_finder(".", boost::algorithm::is_equal()));
         auto end = boost::split_iterator<std::string::iterator>();
 
-        for(; it != end; ++it)
+        unsigned int score = 0;
+        // Check if our query contains the current filename part
+        for (auto qit = query.begin(); qit != query.end(); ++qit)
         {
-            std::string tmp = boost::copy_range<std::string>(*it);
-
-            // Check if our query contains the current filename part
-            if (std::any_of(query.begin(), query.end(), [tmp](std::string const& s) { return boost::algorithm::icontains(tmp, s); }))
-                score++;
+            for(auto it = start_it; it != end; ++it)
+            {
+                if (boost::algorithm::icontains(*it, *qit))
+                {
+                    score += 1 + ((*qit).size() == (*it).size());
+                    break;
+                }
+            }
         }
 
         // Do not add results with score == 0
-        if (score)
+        if (score >= query.size())
             results.push_back(std::make_unique<SearchResultItem>(announce.second, score));
     }
 }
