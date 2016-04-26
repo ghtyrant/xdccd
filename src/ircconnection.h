@@ -63,6 +63,9 @@ class IRCConnection
         write_handler_t write_handler;
         connected_handler_t connected_handler;
 
+        std::size_t bytes_read;
+        std::size_t bytes_written;
+
         boost::asio::streambuf msg_buffer;
         std::string partial_msg;
 

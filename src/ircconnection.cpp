@@ -14,6 +14,8 @@ xdccd::IRCConnection::IRCConnection(const std::string &host, std::string port, c
     work(std::make_unique<boost::asio::io_service::work>(io_service)),
     read_handler(read_handler),
     connected_handler(connected_handler),
+    bytes_read(0),
+    bytes_written(0),
     reconnect_delay(0),
     timeout_timer(io_service),
     reconnect_timer(io_service),
@@ -30,7 +32,6 @@ void xdccd::IRCConnection::connect()
         socket = std::make_unique<xdccd::PlainSocket>(io_service);
 
     boost::asio::ip::tcp::resolver::query query(host, port);
-    boost::system::error_code error = boost::asio::error::host_not_found;
 
     state = connection::CONNECTING;
 
@@ -46,6 +47,13 @@ void xdccd::IRCConnection::on_resolved(const boost::system::error_code& err, boo
     decltype(endpoint_iterator) end;
     boost::system::error_code error = boost::asio::error::host_not_found;
 
+    if (err)
+    {
+        BOOST_LOG_TRIVIAL(error) << "Error resolving " << host << ": " << err.message();
+        start_reconnect_timer();
+        return;
+    }
+
     while (endpoint_iterator != end)
     {
         if (!error)
@@ -58,7 +66,7 @@ void xdccd::IRCConnection::on_resolved(const boost::system::error_code& err, boo
 
     if (error)
     {
-        BOOST_LOG_TRIVIAL(info) << "Error connecting to " << host << ": " << error.message();
+        BOOST_LOG_TRIVIAL(error) << "Error connecting to " << host << ": " << error.message();
         start_reconnect_timer();
         return;
     }
@@ -121,6 +129,8 @@ void xdccd::IRCConnection::read(const boost::system::error_code& error, std::siz
         message_received = true;
         timeout_lock.unlock();
 
+        bytes_read += count;
+
         boost::asio::streambuf::const_buffers_type bufs = msg_buffer.data();
         read_handler(
                 std::string(boost::asio::buffers_begin(bufs),
@@ -146,7 +156,18 @@ void xdccd::IRCConnection::read(const boost::system::error_code& error, std::siz
 
 void xdccd::IRCConnection::write(const std::string &message)
 {
-    socket->async_write(boost::asio::buffer(message + "\r\n"),[](const boost::system::error_code &error, std::size_t bytes_transferred){});
+    socket->async_write(boost::asio::buffer(message + "\r\n"),
+            [this](const boost::system::error_code &error, std::size_t bytes_transferred)
+            {
+                if (error)
+                {
+                    BOOST_LOG_TRIVIAL(error) << "Write error: " << error.message();
+                    start_reconnect_timer();
+                    return;
+                }
+
+                bytes_written += bytes_transferred;
+            });
 }
 
 void xdccd::IRCConnection::close()

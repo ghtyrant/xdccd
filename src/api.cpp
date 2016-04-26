@@ -94,7 +94,7 @@ void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
             file_child["filename"] = file->filename;
             file_child["filesize"] = static_cast<Json::UInt64>(file->size);
             file_child["received"] = static_cast<Json::UInt64>(file->received);
-            file_child["state"] = file->state;
+            file_child["state"] = 0;
             float received_percent = (static_cast<float>(file->received) / static_cast<float>(file->size)) * 100.0f;
             file_child["received_percent"] = received_percent;
             file_child["passive"] = file->passive;

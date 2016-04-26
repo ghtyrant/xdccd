@@ -6,6 +6,8 @@
 #include <boost/thread.hpp>
 #include <boost/log/trivial.hpp>
 
+#include "task.h"
+
 namespace xdccd
 {
 
@@ -36,7 +38,8 @@ class Threadpool
             catch (...) {}
         }
 
-        template <typename Task> void run_task(Task task)
+        template <typename T>
+        void run(T task)
         {
             std::lock_guard<std::mutex> lock(mutex);
 
@@ -46,15 +49,28 @@ class Threadpool
             available--;
 
             io_service.post(boost::bind(&Threadpool::wrap_task, this,
-                            std::function<void(bool&)>(task)));
+                            task));
+        }
+
+        void run_task(TaskPtr task)
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+
+            if (available == 0)
+                return;
+
+            available--;
+
+            io_service.post(boost::bind(&Threadpool::wrap_task, this,
+                            [&task](){ task->run(); }));
         }
 
     private:
-        void wrap_task(std::function<void(bool&)> task)
+        void wrap_task(std::function<void()> func)
         {
             try
             {
-                task(stop);
+                func();
             }
             catch (...) {}
 

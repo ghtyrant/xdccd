@@ -7,6 +7,7 @@
 #include "threadpool.h"
 #include "logable.h"
 #include "logging.h"
+#include "dccreceivetask.h"
 
 namespace xdccd
 {
@@ -66,6 +67,8 @@ class DCCBot : public Logable<DCCBot>
     private:
         void add_announce(const std::string &bot, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count);
         DCCAnnouncePtr get_announce(const std::string &hash) const;
+        void start_download(DCCFilePtr file, bool active);
+        void on_file_finished(DCCReceiveTaskPtr task);
 
         bot_id_t id;
         file_id_t last_file_id;
@@ -79,6 +82,8 @@ class DCCBot : public Logable<DCCBot>
         std::vector<std::string> channels_to_join;
         std::map<std::string, DCCAnnouncePtr> announces;
         std::uintmax_t total_size;
+        std::map<std::string, std::vector<DCCReceiveTaskPtr>> transfers;
+        std::mutex transfers_lock;
 };
 
 typedef std::shared_ptr<DCCBot> DCCBotPtr;

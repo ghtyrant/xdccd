@@ -3,7 +3,6 @@
 #include <boost/format.hpp>
 
 #include "dccbot.h"
-#include "dccreceivetask.h"
 #include "ircmessage.h"
 
 
@@ -172,7 +171,7 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
             // Check if we are expecting the incoming file
             for(auto file : files)
             {
-                if (file->bot == msg.nickname && file->filename == filename && file->state == xdccd::FileState::AWAITING_CONNECTION)
+                if (file->bot == msg.nickname && file->filename == filename)
                 {
                     file_ptr = file;
                     file_ptr->ip = addr.to_string();
@@ -186,11 +185,10 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
             if (file_ptr == nullptr)
             {
                 file_ptr = std::make_shared<DCCFile>(last_file_id++, msg.nickname, addr.to_string(), port, download_path, filename, std::strtoumax(size.c_str(), nullptr, 10));
-                file_ptr->state = xdccd::FileState::AWAITING_RESPONSE;
                 files.push_back(file_ptr);
             }
 
-            threadpool.run_task(DCCReceiveTask(file_ptr, active));
+            start_download(file_ptr, active);
         }
     }
 }
@@ -325,6 +323,26 @@ xdccd::DCCAnnouncePtr xdccd::DCCBot::get_announce(const std::string &hash) const
         return nullptr;
 
     return it->second;
+}
+
+void xdccd::DCCBot::start_download(DCCFilePtr file, bool active)
+{
+    std::lock_guard<std::mutex> lock(transfers_lock);
+
+    auto target = transfers.find(file->bot);
+    DCCReceiveTaskPtr task = std::make_shared<DCCReceiveTask>(file, active, std::bind(&DCCBot::on_file_finished, this, std::placeholders::_1));
+
+    if (target == transfers.end())
+        transfers.insert(std::pair<std::string, std::vector<DCCReceiveTaskPtr>>(file->bot, { task }));
+    else
+        target->second.push_back(task);
+
+    threadpool.run_task(task);
+}
+
+void xdccd::DCCBot::on_file_finished(DCCReceiveTaskPtr task)
+{
+    BOOST_LOG_TRIVIAL(info) << "Finished download of file " << task->get_file()->filename << "!";
 }
 
 void xdccd::DCCBot::find_announces(const std::string &query, std::vector<DCCAnnouncePtr> &result) const

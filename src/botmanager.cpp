@@ -19,7 +19,7 @@ void xdccd::BotManager::launch_bot(const std::string &host, const std::string &p
 
     BOOST_LOG_TRIVIAL(info) << "Launching bot " << bot;
 
-    threadpool.run_task([bot](bool& stop) { bot->run(); });
+    threadpool.run([bot]() { bot->run(); });
 }
 
 const std::vector<xdccd::DCCBotPtr> &xdccd::BotManager::get_bots()

@@ -32,7 +32,6 @@ clean:
 $(OBJDIR):
 	mkdir -p obj
 
-
 $(OBJDIR)/%.o: src/%.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
 

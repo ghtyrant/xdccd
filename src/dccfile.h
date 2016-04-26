@@ -7,16 +7,6 @@ namespace xdccd
 
 typedef std::size_t file_id_t;
 
-enum FileState
-{
-    AWAITING_CONNECTION,
-    AWAITING_RESPONSE,
-    DOWNLOADING,
-    FINISHED,
-    CANCELLED,
-    ERROR
-};
-
 class DCCFile
 {
     public:
@@ -36,7 +26,6 @@ class DCCFile
         bool transfer_started;
         boost::filesystem::path path;
         boost::filesystem::ofstream stream;
-        FileState state;
         bool passive;
 };
 
