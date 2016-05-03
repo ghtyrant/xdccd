@@ -1,3 +1,4 @@
+#pragma once
 
 namespace xdccd
 {
@@ -6,13 +7,16 @@ namespace xdccd
 class FileTarget : AbstractTarget
 {
     public:
-        FileTargetifile_id_t id, const boost::filesystem::path &base_path, const std::string &filename, std::uintmax_t size);
+        FileTarget(file_id_t id, const std::string &filename, file_size_t size);
         void open();
         void close();
         void write(const char* data, std::streamsize len);
 
+    private:
+        boost::filesystem::path path;
+        boost::filesystem::ofstream stream;
 };
 
-typedef std::shared_ptr<DCCFile> DCCFilePtr;
+typedef std::shared_ptr<FileTarget> FileTargetPtr;
 
 }

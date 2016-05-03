@@ -79,7 +79,7 @@ void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
         child["connection_state"] = bot->get_connection_state();
         child["host"] = bot->get_host() + ":" + bot->get_port();
         child["announces"] = static_cast<Json::UInt64>(bot->get_announces().size());
-        child["total_size"] = static_cast<Json::UInt64>(bot->get_total_size());
+        child["total_size"] = static_cast<Json::UInt64>(bot->get_total_announces_size());
 
         for (auto channel_name : bot->get_channels())
         {

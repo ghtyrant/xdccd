@@ -1,7 +1,8 @@
 #include "filetarget.h"
 
-xdccd::FileTarget::FileTarget(file_id_t id, const boost::filesystem::path &base_path, const std::string &filename, std::uintmax_t size)
-    : AbstractTarget(id, filename, size, 0, false, base_path)
+xdccd::FileTarget::FileTarget(file_id_t id, const boost::filesystem::path &base_path, const std::string &filename, file_size_t size)
+    : AbstractTarget(id, filename, size),
+    path(base_path)
 {
     path /= filename;
 }

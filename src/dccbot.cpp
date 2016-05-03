@@ -33,10 +33,13 @@ bool xdccd::DCCAnnounce::compare(const std::string &other) const
 
 xdccd::logger_type_t xdccd::DCCBot::logger(boost::log::keywords::channel = "DCCBot");
 
-xdccd::DCCBot::DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl, const boost::filesystem::path &path)
-    : id(id), last_file_id(0), nickname(nick), connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }), ([this]() { this->on_connected(); }), use_ssl),
-    download_path(path),
-    threadpool(5), channels_to_join(channels), total_size(0)
+xdccd::DCCBot::DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl)
+    : id(id),
+    last_file_id(0),
+    nickname(nick),
+    connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }),([this]() { this->on_connected(); }), use_ssl),
+    channels_to_join(channels),
+    total_announces_size(0)
 {
     std::string result = boost::algorithm::join(channels, ", ");
     BOOST_LOG_TRIVIAL(info) << "Started " << *this << " for '" << host << ":" << port << "', called '" << nick  << "', auto-joining: " << result;
@@ -293,12 +296,12 @@ const std::string &xdccd::DCCBot::get_port() const
 void xdccd::DCCBot::add_announce(const std::string &bot, const std::string &filename, const std::string &size, const std::string &slot, const std::string &download_count)
 {
     DCCAnnouncePtr announce = std::make_shared<DCCAnnounce>(id, bot, filename, size, slot, download_count);
-    total_size += announce->num_size;
+    total_announces_size += announce->num_size;
 
     auto old_announce = announces.find(announce->hash);
     if (old_announce != announces.end())
     {
-        total_size -= old_announce->second->num_size;
+        total_announces_size -= old_announce->second->num_size;
         announces.insert(old_announce, std::pair<std::string, DCCAnnouncePtr>(announce->hash, announce));
     }
     else
@@ -390,7 +393,7 @@ xdccd::connection::STATE xdccd::DCCBot::get_connection_state() const
     return connection.get_state();
 }
 
-std::uintmax_t xdccd::DCCBot::get_total_size() const
+std::uintmax_t xdccd::DCCBot::get_total_announces_size() const
 {
-    return total_size;
+    return total_announces_size;
 }

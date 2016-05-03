@@ -4,13 +4,14 @@
 
 namespace xdccd
 {
-    typedef std::size_t file_id_t;
-    typedef file_size_t std::streamoff;
 
-abstract class AbstractTarget
+typedef std::size_t file_id_t;
+typedef file_size_t std::streamoff;
+
+class AbstractTarget
 {
     public:
-        AbstractTarget(file_id_t id, const boost::filesystem::path &base_path, const std::string &filename, std::uintmax_t size);
+        AbstractTarget(file_id_t id, const std::string &filename, file_size_t size);
         virtual void open();
         virtual void close();
         virtual void write(const char* data, std::streamsize len);
@@ -18,14 +19,11 @@ abstract class AbstractTarget
 
         file_id_t id;
         std::string filename;
-        std::uintmax_t size;
-        std::uintmax_t received;
-        bool transfer_started;
-        boost::filesystem::path path;
-        boost::filesystem::ofstream stream;
+        file_size_t size;
+        file_size_t received;
         bool passive;
 };
 
-typedef std::shared_ptr<DCCFile> DCCFilePtr;
+typedef std::shared_ptr<AbstractTarget> AbstractTargetPtr;
 
 }
