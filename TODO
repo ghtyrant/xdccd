@@ -1,0 +1,14 @@
+TODO
+- SearchCache -> SearchManager
+- Suche als Task
+    - API startet Suche, kriegt ID zurück
+    - Pollt regelmäßig nach Suchstatus
+        - Kriegt zurück "Ist fertig" + Ergebnis oder "Still running"
+- Threadpool vom BotManager überarbeiten (pro Bot muss sowieso ein neuer Thread erstellt werden)
+- Interface für DCCFile/DCCBuffer implementieren
+- DCCBuffer implementieren (statt in File wird in Buffer gespeichert)
+- DownloadManager implementieren
+    - Verwaltet ReceiveTasks
+    - Speichert DCCFiles/Buffers
+    - DCCBot speichert nichts mehr
+    - Speichert ReceiveTasks in Map (FileID => RTPtr)
