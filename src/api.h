@@ -20,6 +20,7 @@ class API
         void stop();
 
         BotManager &get_bot_manager();
+        DownloadManager &get_download_manager();
 
         // Static file handler
         void static_file_handler(std::shared_ptr<restbed::Session> session);
@@ -37,9 +38,12 @@ class API
         std::string bind_address;
         int port;
         boost::filesystem::path download_path;
-        BotManager manager;
-        SearchCache search;
         restbed::Service service;
+
+        BotManager bot_manager;
+        SearchCache search_manager;
+        DownloadManager download_manager;
+
 };
 
 }

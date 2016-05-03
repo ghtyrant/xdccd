@@ -6,22 +6,26 @@ namespace xdccd
 {
 
 typedef std::size_t file_id_t;
-typedef file_size_t std::streamoff;
+typedef std::streamoff file_size_t;
 
 class AbstractTarget
 {
     public:
-        AbstractTarget(file_id_t id, const std::string &filename, file_size_t size);
-        virtual void open();
-        virtual void close();
-        virtual void write(const char* data, std::streamsize len);
-        virtual int read();
+        AbstractTarget(file_id_t id, const std::string &filename, file_size_t size)
+            : id(id), filename(filename), size(size), received(0)
+        {}
+
+        virtual ~AbstractTarget() {}
+
+        virtual void open() = 0;
+        virtual void close() = 0;
+        virtual void write(const char* data, std::streamsize len) = 0;
+        virtual int read() = 0;
 
         file_id_t id;
         std::string filename;
         file_size_t size;
         file_size_t received;
-        bool passive;
 };
 
 typedef std::shared_ptr<AbstractTarget> AbstractTargetPtr;

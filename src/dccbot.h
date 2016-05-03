@@ -1,13 +1,13 @@
 #pragma once
 
 #include <mutex>
+#include <map>
 
-#include "dccfile.h"
 #include "ircconnection.h"
 #include "threadpool.h"
 #include "logable.h"
 #include "logging.h"
-#include "dccreceivetask.h"
+#include "downloadmanager.h"
 
 namespace xdccd
 {
@@ -34,10 +34,20 @@ struct DCCAnnounce
 
 typedef std::shared_ptr<DCCAnnounce> DCCAnnouncePtr;
 
+class DCCRequest
+{
+    public:
+        DCCRequest(DCCAnnouncePtr announce, bool stream);
+        DCCAnnouncePtr announce;
+        bool stream;
+};
+
+typedef std::unique_ptr<DCCRequest> DCCRequestPtr;
+
 class DCCBot : public Logable<DCCBot>
 {
     public:
-        DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl);
+        DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl, DownloadManager &download_manager);
         void read_handler(const std::string &message);
 
         void run();
@@ -50,21 +60,21 @@ class DCCBot : public Logable<DCCBot>
         void on_part(const std::string &channel);
         void on_privmsg(const xdccd::IRCMessage &msg);
 
-        void request_file(const std::string &nick, const std::string &slot);
+        void request_file(const std::string &nick, const std::string &slot, bool stream);
 
         bot_id_t get_id() const;
         const std::vector<std::string> &get_channels() const;
         const std::string &get_nickname() const;
         const std::string &get_host() const;
         const std::string &get_port() const;
+        connection::STATE get_connection_state() const;
+        file_size_t get_total_announces_size() const;
+        virtual std::string to_string() const;
 
         const std::map<std::string, DCCAnnouncePtr> &get_announces() const;
         void find_announces(const std::string &query, std::vector<DCCAnnouncePtr> &result) const;
 
         void change_nick(const std::string &nick);
-        virtual std::string to_string() const;
-        connection::STATE get_connection_state() const;
-        std::uintmax_t get_total_announces_size() const;
 
         static xdccd::logger_type_t logger;
 
@@ -75,10 +85,13 @@ class DCCBot : public Logable<DCCBot>
         bot_id_t id;
         std::string nickname;
         xdccd::IRCConnection connection;
+        xdccd::DownloadManager &download_manager;
         std::vector<std::string> channels;
         std::vector<std::string> channels_to_join;
         std::map<std::string, DCCAnnouncePtr> announces;
-        std::uintmax_t total_announces_size;
+        file_size_t total_announces_size;
+
+        std::multimap<std::string, DCCRequestPtr> requests;
 };
 
 typedef std::shared_ptr<DCCBot> DCCBotPtr;

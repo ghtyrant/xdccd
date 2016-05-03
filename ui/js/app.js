@@ -94,8 +94,8 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
   $scope.download_stat = sharedDataService;
 
   $scope.getBots = function(){
-    apiService.getBots().then(function(bots) {
-      $scope.bots = bots;
+    apiService.getBots().then(function(data){
+      console.log(data);
 
       var active_downloads = [];
       var finished_downloads = [];
@@ -103,25 +103,21 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
 
       $scope.total_size = 0;
       $scope.total_announces = 0;
+
+      var bots = data["bots"];
       for (var i = 0; i < bots.length; i++) {
         $scope.total_size += bots[i].total_size;
         $scope.total_announces += bots[i].announces;
+      }
 
-        for (var j = 0; j < bots[i].downloads.length; j++) {
-          var dl = bots[i].downloads[j];
-          dl["bot"] = bots[i];
+      var downloads = data["downloads"];
+      for (var i = 0; i < downloads.length; i++) {
+        var dl = downloads[i];
+        total_bps += dl.bytes_per_second;
+        dl["time_left"] = (dl.size - dl.received) / dl.bytes_per_second;
+        dl["received_percent"] = dl.size / dl.received * 100.0;
 
-          if(dl.state == 3)
-          {
-            finished_downloads.push(dl);
-          }
-          else if(dl.state == 2)
-          {
-            active_downloads.push(dl);
-            total_bps += dl.bytes_per_second;
-            dl["time_left"] = (dl.filesize - dl.received) / dl.bytes_per_second;
-          }
-        }
+        active_downloads.push(dl);
       }
 
       $scope.download_stat.active_downloads = active_downloads;

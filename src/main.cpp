@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
                 for(auto channel : bot["channels"])
                     channels.push_back(channel.asString());
 
-            api.get_bot_manager().launch_bot(host, port, bot_name, channels, ssl, download_path);
+            api.get_bot_manager().launch_bot(host, port, bot_name, channels, ssl, api.get_download_manager());
         }
     }
 

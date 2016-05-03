@@ -13,7 +13,7 @@ class BotManager
     public:
         BotManager(std::size_t max_bots);
         ~BotManager();
-        void launch_bot(const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl, const boost::filesystem::path &download_path);
+        void launch_bot(const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl, DownloadManager &download_manager);
         void run();
         const std::vector<DCCBotPtr> &get_bots();
         DCCBotPtr get_bot_by_id(bot_id_t id);

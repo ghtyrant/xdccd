@@ -17,13 +17,18 @@ using namespace std::chrono_literals;
 bool xdccd::API::quit = false;
 
 xdccd::API::API(const std::string &bind_address, int port, const boost::filesystem::path &download_path)
-    : bind_address(bind_address), port(port), download_path(download_path), manager(10)
+    : bind_address(bind_address), port(port), download_path(download_path), bot_manager(10), download_manager(download_path)
 {
 }
 
 xdccd::BotManager &xdccd::API::get_bot_manager()
 {
-    return manager;
+    return bot_manager;
+}
+
+xdccd::DownloadManager &xdccd::API::get_download_manager()
+{
+    return download_manager;
 }
 
 void xdccd::API::static_file_handler(std::shared_ptr<restbed::Session> session)
@@ -69,9 +74,11 @@ void xdccd::API::static_file_handler(std::shared_ptr<restbed::Session> session)
 
 void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
 {
-    Json::Value root(Json::ValueType::arrayValue);
+    Json::Value root;
 
-    for(auto bot : manager.get_bots())
+    Json::Value bot_list(Json::ValueType::arrayValue);
+
+    for(auto &bot : bot_manager.get_bots())
     {
         Json::Value child;
         child["id"] = static_cast<Json::UInt64>(bot->get_id());
@@ -86,25 +93,36 @@ void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
             child["channels"].append(channel_name);
         }
 
-        child["downloads"].resize(0);
-        for (auto file : bot->get_files())
-        {
-            Json::Value file_child;
-            file_child["id"] = static_cast<Json::UInt64>(file->id);
-            file_child["filename"] = file->filename;
-            file_child["filesize"] = static_cast<Json::UInt64>(file->size);
-            file_child["received"] = static_cast<Json::UInt64>(file->received);
-            file_child["state"] = 0;
-            float received_percent = (static_cast<float>(file->received) / static_cast<float>(file->size)) * 100.0f;
-            file_child["received_percent"] = received_percent;
-            file_child["passive"] = file->passive;
-            file_child["bytes_per_second"] = static_cast<Json::UInt64>(file->bytes_per_second);
-
-            child["downloads"].append(file_child);
-        }
-
-        root.append(child);
+        bot_list.append(child);
     }
+    root["bots"] = bot_list;
+
+    Json::Value dl_list(Json::ValueType::arrayValue);
+    for (auto &transfer : download_manager.get_transfers())
+    {
+        Json::Value child;
+        child["id"] = static_cast<Json::UInt64>(transfer.second->get_target()->id);
+        child["filename"] = transfer.second->get_target()->filename;
+        child["size"] = static_cast<Json::UInt64>(transfer.second->get_target()->size);
+        child["received"] = static_cast<Json::UInt64>(transfer.second->get_target()->received);
+        child["state"] = transfer.second->get_state();
+        child["active"] = transfer.second->is_active();
+        child["bytes_per_second"] = static_cast<Json::UInt64>(transfer.second->get_bps());
+        dl_list.append(child);
+    }
+    root["downloads"] = dl_list;
+
+    Json::Value files_list(Json::ValueType::arrayValue);
+    for (auto &target : download_manager.get_finished_files())
+    {
+        Json::Value child;
+        child["id"] = static_cast<Json::UInt64>(target->id);
+        child["filename"] = target->filename;
+        child["size"] = static_cast<Json::UInt64>(target->size);
+        child["received"] = static_cast<Json::UInt64>(target->received);
+        files_list.append(child);
+    }
+    root["files"] = files_list;
 
     std::ostringstream oss;
     oss << root;
@@ -148,7 +166,7 @@ void xdccd::API::connect_handler(std::shared_ptr<restbed::Session> session)
         for (Json::ArrayIndex i = 0; i < channel_list.size(); ++i)
             channels.push_back(channel_list[i].asString());
 
-        manager.launch_bot(root["server"].asString(), "6667", root["nickname"].asString(), channels, false, download_path);
+        bot_manager.launch_bot(root["server"].asString(), "6667", root["nickname"].asString(), channels, false, download_manager);
 
         session->close(restbed::OK);
     } );
@@ -158,7 +176,7 @@ void xdccd::API::disconnect_handler(std::shared_ptr<restbed::Session> session)
 {
     const auto& request = session->get_request();
     const std::string id = request->get_path_parameter("id");
-    xdccd::DCCBotPtr bot = manager.get_bot_by_id(static_cast<xdccd::bot_id_t>(std::stoi(id)));
+    xdccd::DCCBotPtr bot = bot_manager.get_bot_by_id(static_cast<xdccd::bot_id_t>(std::stoi(id)));
 
     if (bot == nullptr)
     {
@@ -166,7 +184,7 @@ void xdccd::API::disconnect_handler(std::shared_ptr<restbed::Session> session)
         return;
     }
 
-    manager.stop_bot(bot);
+    bot_manager.stop_bot(bot);
 
     session->close(restbed::OK);
 }
@@ -175,7 +193,7 @@ void xdccd::API::remove_file_from_list_handler(std::shared_ptr<restbed::Session>
 {
     const auto& request = session->get_request();
     const std::string bot_id = request->get_path_parameter("id");
-    xdccd::DCCBotPtr bot = manager.get_bot_by_id(static_cast<xdccd::bot_id_t>(std::stoi(bot_id)));
+    xdccd::DCCBotPtr bot = bot_manager.get_bot_by_id(static_cast<xdccd::bot_id_t>(std::stoi(bot_id)));
 
     if(bot == nullptr)
     {
@@ -183,8 +201,9 @@ void xdccd::API::remove_file_from_list_handler(std::shared_ptr<restbed::Session>
         return;
     }
 
-    const std::string file_id = request->get_path_parameter("file");
-    bot->remove_file(static_cast<xdccd::file_id_t>(std::stoi(file_id)));
+    // TODO use download manager to do this
+    //const std::string file_id = request->get_path_parameter("file");
+    //bot->remove_file(static_cast<xdccd::file_id_t>(std::stoi(file_id)));
 
     session->close(restbed::OK);
 }
@@ -194,7 +213,7 @@ void xdccd::API::request_file_handler(std::shared_ptr<restbed::Session> session)
     const auto request = session->get_request();
 
     const std::string id = request->get_path_parameter("id");
-    xdccd::DCCBotPtr bot = manager.get_bot_by_id(static_cast<xdccd::bot_id_t>(std::stoi(id)));
+    xdccd::DCCBotPtr bot = bot_manager.get_bot_by_id(static_cast<xdccd::bot_id_t>(std::stoi(id)));
 
     if (bot == nullptr)
     {
@@ -225,7 +244,7 @@ void xdccd::API::request_file_handler(std::shared_ptr<restbed::Session> session)
             return;
         }
 
-        bot->request_file(root["nick"].asString(), root["slot"].asString());
+        bot->request_file(root["nick"].asString(), root["slot"].asString(), root.get("stream", false).asBool());
 
         session->close(restbed::OK);
     } );
@@ -269,7 +288,7 @@ void xdccd::API::search_handler(std::shared_ptr<restbed::Session> session)
         // Build response
         Json::Value root;
 
-        xdccd::SearchResultPtr sr = search.search(manager, search_request["query"].asString(), start, limit);
+        xdccd::SearchResultPtr sr = search_manager.search(bot_manager, search_request["query"].asString(), start, limit);
 
         root["total_results"] = static_cast<Json::UInt64>(sr->total_results);
         root["start"] = static_cast<Json::UInt64>(sr->result_start);
