@@ -4,7 +4,7 @@
 #include <map>
 
 #include "ircconnection.h"
-#include "threadpool.h"
+#include "threadmanager.h"
 #include "logable.h"
 #include "logging.h"
 #include "downloadmanager.h"
@@ -84,8 +84,10 @@ class DCCBot : public Logable<DCCBot>
 
         bot_id_t id;
         std::string nickname;
-        xdccd::IRCConnection connection;
-        xdccd::DownloadManager &download_manager;
+
+        IRCConnection connection;
+        DownloadManager &download_manager;
+
         std::vector<std::string> channels;
         std::vector<std::string> channels_to_join;
         std::map<std::string, DCCAnnouncePtr> announces;

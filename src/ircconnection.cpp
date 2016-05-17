@@ -16,7 +16,7 @@ xdccd::IRCConnection::IRCConnection(const std::string &host, std::string port, c
     connected_handler(connected_handler),
     bytes_read(0),
     bytes_written(0),
-    reconnect_delay(0),
+    reconnect_delay(xdccd::connection::MIN_RECONNECT_DELAY),
     timeout_timer(io_service),
     reconnect_timer(io_service),
     message_received(false),
@@ -70,8 +70,6 @@ void xdccd::IRCConnection::on_resolved(const boost::system::error_code& err, boo
         start_reconnect_timer();
         return;
     }
-
-    reconnect_delay = xdccd::connection::MIN_RECONNECT_DELAY;
 
     // Inform the bot about the succesful connection
     connected_handler();
@@ -131,6 +129,9 @@ void xdccd::IRCConnection::read(const boost::system::error_code& error, std::siz
 
         bytes_read += count;
 
+        // We succesfully received a message, reset reconnect timer
+        reconnect_delay = xdccd::connection::MIN_RECONNECT_DELAY;
+
         boost::asio::streambuf::const_buffers_type bufs = msg_buffer.data();
         read_handler(
                 std::string(boost::asio::buffers_begin(bufs),
@@ -188,7 +189,6 @@ void xdccd::IRCConnection::start_reconnect_timer()
 {
     if (reconnect_timer.expires_from_now() > std::chrono::milliseconds::zero())
         return;
-
 
     std::lock_guard<std::mutex> lock(timeout_lock);
     reconnect_delay = reconnect_delay == std::chrono::milliseconds::zero() ? xdccd::connection::MIN_RECONNECT_DELAY : reconnect_delay * 2;

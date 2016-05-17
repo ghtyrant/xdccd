@@ -95,8 +95,6 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
 
   $scope.getBots = function(){
     apiService.getBots().then(function(data){
-      console.log(data);
-
       var active_downloads = [];
       var finished_downloads = [];
       var total_bps = 0;
@@ -110,12 +108,14 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
         $scope.total_announces += bots[i].announces;
       }
 
+      $scope.bots = data["bots"];
+
       var downloads = data["downloads"];
       for (var i = 0; i < downloads.length; i++) {
         var dl = downloads[i];
         total_bps += dl.bytes_per_second;
         dl["time_left"] = (dl.size - dl.received) / dl.bytes_per_second;
-        dl["received_percent"] = dl.size / dl.received * 100.0;
+        dl["received_percent"] = dl.received / dl.size * 100.0;
 
         active_downloads.push(dl);
       }

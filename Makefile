@@ -1,4 +1,4 @@
-CXX=clang++
+CXX=g++
 CXXFLAGS=-g -O0 -std=c++14 -Wall -Wextra -pedantic -DBOOST_LOG_DYN_LINK
 LDFLAGS=-lboost_filesystem -lboost_system -lboost_thread -lboost_log_setup -lboost_log -lpthread -lssl -lcrypto -lrestbed -ljsoncpp
 

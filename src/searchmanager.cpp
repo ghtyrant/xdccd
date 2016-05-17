@@ -3,7 +3,7 @@
 #include <cctype>
 
 #include "logging.h"
-#include "searchcache.h"
+#include "searchmanager.h"
 #include "botmanager.h"
 
 xdccd::SearchResultItem::SearchResultItem(DCCAnnouncePtr announce, unsigned int score)
@@ -18,7 +18,7 @@ xdccd::CacheEntry::CacheEntry(const std::string &query, std::vector<SearchResult
     : query(query), results(std::move(results)), created(std::chrono::system_clock::now())
 {}
 
-xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, const std::string &query, std::size_t start, std::size_t limit)
+xdccd::SearchResultPtr xdccd::SearchManager::search(xdccd::BotManager &manager, const std::string &query, std::size_t start, std::size_t limit)
 {
     std::lock_guard<std::mutex> lock(cache_lock);
 
@@ -76,7 +76,7 @@ xdccd::SearchResultPtr xdccd::SearchCache::search(xdccd::BotManager &manager, co
     return sr;
 }
 
-void xdccd::SearchCache::search_in_announces(const std::map<std::string, xdccd::DCCAnnouncePtr> &announces, const std::vector<std::string> &query, std::vector<xdccd::SearchResultItemPtr> &results) const
+void xdccd::SearchManager::search_in_announces(const std::map<std::string, xdccd::DCCAnnouncePtr> &announces, const std::vector<std::string> &query, std::vector<xdccd::SearchResultItemPtr> &results) const
 {
     // Iterate all announces
     for (auto announce : announces)
@@ -105,8 +105,8 @@ void xdccd::SearchCache::search_in_announces(const std::map<std::string, xdccd::
     }
 }
 
-void xdccd::SearchCache::clear()
+void xdccd::SearchManager::clear()
 {
-    BOOST_LOG_TRIVIAL(debug) << "Clearing SearchCache!";
+    BOOST_LOG_TRIVIAL(debug) << "Clearing SearchManager!";
     cache.clear();
 }

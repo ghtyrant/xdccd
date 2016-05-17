@@ -2,9 +2,9 @@
 #include "filetarget.h"
 #include "buffertarget.h"
 
-xdccd::DownloadManager::DownloadManager(const boost::filesystem::path &download_path)
+xdccd::DownloadManager::DownloadManager(ThreadManager &thread_man, const boost::filesystem::path &download_path)
     : last_file_id(0),
-      threadpool(5),
+      thread_manager(thread_man),
       download_path(download_path)
 {
 }
@@ -26,26 +26,26 @@ void xdccd::DownloadManager::start_download(const std::string &host,
     DCCReceiveTaskPtr task = std::make_shared<DCCReceiveTask>(host, port, target, active, std::bind(&DownloadManager::on_file_finished, this, std::placeholders::_1));
 
     std::lock_guard<std::mutex> lock(transfers_lock);
-    BOOST_LOG_TRIVIAL(info) << "Created new AbstractTarget with id " << target->id << ", task: " << task.use_count() << ".";
     transfers[target->id] = task;
-    BOOST_LOG_TRIVIAL(info) << "Created new AbstractTarget with id " << target->id << ", task: " << task.use_count() << ".";
 
-    threadpool.run_task(task);
-    BOOST_LOG_TRIVIAL(info) << "Created new AbstractTarget with id " << target->id << ", task: " << task.use_count() << ".";
+    thread_manager.run_task(task);
 }
 
 void xdccd::DownloadManager::on_file_finished(file_id_t file_id)
 {
+    std::lock_guard<std::mutex> lock(transfers_lock);
     DCCReceiveTaskPtr task = transfers[file_id];
     AbstractTargetPtr target = task->get_target();
 }
 
-const std::vector<xdccd::AbstractTargetPtr> &xdccd::DownloadManager::get_finished_files() const
+std::vector<xdccd::AbstractTargetPtr> xdccd::DownloadManager::get_finished_files()
 {
+    std::lock_guard<std::mutex> lock(finished_files_lock);
     return finished_files;
 }
 
-const std::map<xdccd::file_id_t, xdccd::DCCReceiveTaskPtr> &xdccd::DownloadManager::get_transfers() const
+std::map<xdccd::file_id_t, xdccd::DCCReceiveTaskPtr> xdccd::DownloadManager::get_transfers()
 {
+    std::lock_guard<std::mutex> lock(transfers_lock);
     return transfers;
 }

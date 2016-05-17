@@ -16,6 +16,10 @@ xdccd::DCCReceiveTask::DCCReceiveTask(const std::string &host, const std::string
     bytes_per_second(0)
 {}
 
+xdccd::DCCReceiveTask::~DCCReceiveTask()
+{
+}
+
 
 xdccd::ReceiveTaskState xdccd::DCCReceiveTask::get_state() const
 {

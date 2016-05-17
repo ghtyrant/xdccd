@@ -190,7 +190,7 @@
                             <tr class="warning">
                                 <td colspan="2">
                                   <div class="progress">
-                                    <div class="progress-bar" ng-class="{'active': file.received < file.filesize}" role="progressbar" aria-valuenow="{{ file.received_percent }}" aria-valuemin="0" aria-valuemax="100" ng-style="{width: ( file.received_percent + '%' ) }">
+                                    <div class="progress-bar" ng-class="{'active': file.received < file.size}" role="progressbar" aria-valuenow="{{ file.received_percent }}" aria-valuemin="0" aria-valuemax="100" ng-style="{width: ( file.received_percent + '%' ) }">
                                       <span class="show">{{ file.received_percent | number:2 }}% - {{ file.received / 1024 / 1024 | number:2 }} MB - {{ file.time_left | secondsToDateTime | date:'HH:mm:ss'}}</span>
                                     </div>
                                   </div>

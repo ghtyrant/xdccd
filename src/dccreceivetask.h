@@ -23,6 +23,7 @@ class DCCReceiveTask : public Task, public std::enable_shared_from_this<DCCRecei
 {
     public:
         DCCReceiveTask(const std::string &host, const std::string &port, AbstractTargetPtr file, bool active, std::function<void(file_id_t)> finished_handler);
+        ~DCCReceiveTask();
         void run();
         ReceiveTaskState get_state() const;
         AbstractTargetPtr get_target() const;

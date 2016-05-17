@@ -20,6 +20,7 @@ void xdccd::FileTarget::close()
 void xdccd::FileTarget::write(const char* data, std::streamsize len)
 {
     stream.write(data, len);
+    received += len;
 }
 
 int xdccd::FileTarget::read()

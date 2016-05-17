@@ -9,7 +9,6 @@
 #include <boost/log/trivial.hpp>
 
 #include "api.h"
-#include "searchcache.h"
 
 using namespace std::placeholders;
 using namespace std::chrono_literals;
@@ -17,7 +16,11 @@ using namespace std::chrono_literals;
 bool xdccd::API::quit = false;
 
 xdccd::API::API(const std::string &bind_address, int port, const boost::filesystem::path &download_path)
-    : bind_address(bind_address), port(port), download_path(download_path), bot_manager(10), download_manager(download_path)
+    : bind_address(bind_address), port(port), download_path(download_path), bot_manager(thread_manager, 10), download_manager(thread_manager, download_path)
+{
+}
+
+xdccd::API::~API()
 {
 }
 

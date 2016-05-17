@@ -45,12 +45,12 @@ xdccd::DCCBot::DCCBot(bot_id_t id,
         const std::string &nick,
         const std::vector<std::string> &channels,
         bool use_ssl,
-        DownloadManager &download_manager)
+        DownloadManager &dl_manager)
 
     : id(id),
     nickname(nick),
     connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }),([this]() { this->on_connected(); }), use_ssl),
-    download_manager(download_manager),
+    download_manager(dl_manager),
     channels_to_join(channels),
     total_announces_size(0)
 {
@@ -188,7 +188,7 @@ void xdccd::DCCBot::on_ctcp(const xdccd::IRCMessage &msg)
                 return;
             else
             {
-                download_manager.start_download(ip, port, filename, std::stoull(size), active, request_iter->second->stream);
+                download_manager.start_download(ip, port, filename, std::stoull(size), active, false);//request_iter->second->stream);
                 requests.erase(request_iter);
             }
         }

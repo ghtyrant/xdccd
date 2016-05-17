@@ -3,7 +3,8 @@
 #include <restbed>
 
 #include "botmanager.h"
-#include "searchcache.h"
+#include "searchmanager.h"
+#include "threadmanager.h"
 #include "config.h"
 
 namespace xdccd
@@ -16,6 +17,7 @@ class API
         static bool quit;
 
         API(const std::string &bind_address, int port, const boost::filesystem::path &download_path);
+        ~API();
         void run();
         void stop();
 
@@ -40,10 +42,10 @@ class API
         boost::filesystem::path download_path;
         restbed::Service service;
 
+        ThreadManager thread_manager;
         BotManager bot_manager;
-        SearchCache search_manager;
+        SearchManager search_manager;
         DownloadManager download_manager;
-
 };
 
 }
