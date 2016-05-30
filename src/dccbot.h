@@ -42,7 +42,10 @@ typedef std::shared_ptr<DCCAnnounce> DCCAnnouncePtr;
 class DCCRequest
 {
     public:
-        DCCRequest(DCCAnnouncePtr announce, bool stream);
+        DCCRequest(const std::string &nick, const std::string &slot, DCCAnnouncePtr announce, bool stream);
+
+        std::string nick;
+        std::string slot;
         DCCAnnouncePtr announce;
         bool stream;
 };
@@ -78,6 +81,7 @@ class DCCBot : public Logable<DCCBot>
         virtual std::string to_string() const;
 
         const std::map<std::string, DCCAnnouncePtr> &get_announces() const;
+        const std::multimap<std::string, DCCRequestPtr> &get_requests() const;
         void find_announces(const std::string &query, std::vector<DCCAnnouncePtr> &result) const;
 
         void change_nick(const std::string &nick);

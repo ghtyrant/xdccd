@@ -30,9 +30,10 @@ bool xdccd::DCCAnnounce::compare(const std::string &other) const
     return boost::algorithm::icontains(filename, other);
 }
 
-xdccd::DCCRequest::DCCRequest(DCCAnnouncePtr announce, bool stream)
-    : announce(announce),
-    stream(stream)
+xdccd::DCCRequest::DCCRequest(const std::string &nick, const std::string &slot, DCCAnnouncePtr announce, bool stream)
+    : nick(nick),
+    slot(slot),
+    announce(announce)
 {
 }
 
@@ -267,7 +268,7 @@ void xdccd::DCCBot::request_file(const std::string &nick, const std::string &slo
     // Check if we already discovered the file the user wants to download
     DCCAnnouncePtr announce = get_announce(nick + slot);
 
-    requests.insert(std::pair<std::string, DCCRequestPtr>(nick, std::make_unique<DCCRequest>(announce, stream)));
+    requests.insert(std::pair<std::string, DCCRequestPtr>(nick, std::make_unique<DCCRequest>(nick, slot, announce, stream)));
 }
 
 const std::vector<std::string> &xdccd::DCCBot::get_channels() const
@@ -327,6 +328,11 @@ void xdccd::DCCBot::find_announces(const std::string &query, std::vector<DCCAnno
 const std::map<std::string, xdccd::DCCAnnouncePtr> &xdccd::DCCBot::get_announces() const
 {
     return announces;
+}
+
+const std::multimap<std::string, xdccd::DCCRequestPtr> &xdccd::DCCBot::get_requests() const
+{
+    return requests;
 }
 
 xdccd::bot_id_t xdccd::DCCBot::get_id() const
