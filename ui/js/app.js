@@ -103,9 +103,14 @@ app.controller('StatusCtrl', function($scope, $timeout, $interval, apiService, s
       $scope.total_announces = 0;
 
       var bots = data["bots"];
+      $scope.requests = [];
       for (var i = 0; i < bots.length; i++) {
         $scope.total_size += bots[i].total_size;
         $scope.total_announces += bots[i].announces;
+        for (var j = 0; j < bots[i].requests.length; j++) {
+          bots[i].requests[j].bot = bots[i];
+          $scope.requests.push(bots[i].requests[j]);
+        }
       }
 
       $scope.bots = data["bots"];

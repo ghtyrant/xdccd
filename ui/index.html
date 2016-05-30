@@ -155,6 +155,27 @@
                   <uib-tab-heading><i class="glyphicon glyphicon-download-alt"></i> Downloads <span class="badge alert-warning" ng-show="download_stat.active_downloads.length > 0">{{ download_stat.active_downloads.length }}</span> <span class="badge alert-success" ng-show="download_stat.finished_downloads.length > 0">{{ download_stat.finished_downloads.length }}</span> <span class="badge alert-info" ng-show="download_stat.total_downloads_count > 0">{{ download_stat.total_downloads_count }}</span></uib-tab-heading>
 
                 <div class="col-lg-12">
+                    <div ng-show="requests.length">
+                    <h2>Pending</h2>
+                        <table class="table table-condensed">
+                            <thead>
+                                <tr>
+                                    <th>Bot</th>
+                                    <th>Filename</th>
+                                    <th>Slot</th>
+                                </tr>
+                            </thead>
+
+                            <tbody ng-repeat="request in requests">
+                                <tr>
+                                    <td>{{ request.nick }}</td>
+                                    <td>{{ request.filename }}</td>
+                                    <td>{{ request.slot }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
                     <h2>Active</h2>
 
                     <i ng-show="!download_stat.active_downloads.length">No files exist!</i>
