@@ -2,6 +2,7 @@
 
 #include <mutex>
 #include <map>
+#include <regex>
 
 #include "ircconnection.h"
 #include "threadmanager.h"
@@ -12,6 +13,10 @@
 namespace xdccd
 {
 
+namespace regex
+{
+    const static std::regex ANNOUNCE("#(\\d{1,3})\\s+(\\d+)x\\s+\\[\\s?(\\d+(?:\\.\\d+)?[KMG])\\] (.*)", std::regex_constants::ECMAScript);
+}
 class IRCMessage;
 
 typedef std::size_t bot_id_t;
@@ -48,6 +53,7 @@ class DCCBot : public Logable<DCCBot>
 {
     public:
         DCCBot(bot_id_t id, const std::string &host, const std::string &port, const std::string &nick, const std::vector<std::string> &channels, bool use_ssl, DownloadManager &download_manager);
+        virtual ~DCCBot();
         void read_handler(const std::string &message);
 
         void run();
@@ -94,6 +100,8 @@ class DCCBot : public Logable<DCCBot>
         file_size_t total_announces_size;
 
         std::multimap<std::string, DCCRequestPtr> requests;
+
+        std::regex announce_regex;
 };
 
 typedef std::shared_ptr<DCCBot> DCCBotPtr;

@@ -1,5 +1,4 @@
 #include <cinttypes>
-#include <regex>
 #include <boost/format.hpp>
 
 #include "dccbot.h"
@@ -52,10 +51,16 @@ xdccd::DCCBot::DCCBot(bot_id_t id,
     connection(host, port, ([this](const std::string &msg) { this->read_handler(msg); }),([this]() { this->on_connected(); }), use_ssl),
     download_manager(dl_manager),
     channels_to_join(channels),
-    total_announces_size(0)
+    total_announces_size(0),
+    announce_regex(xdccd::regex::ANNOUNCE)
 {
     std::string result = boost::algorithm::join(channels, ", ");
     BOOST_LOG_TRIVIAL(info) << "Started " << *this << " for '" << host << ":" << port << "', called '" << nick  << "', auto-joining: " << result;
+}
+
+xdccd::DCCBot::~DCCBot()
+{
+    connection.close();
 }
 
 void xdccd::DCCBot::read_handler(const std::string &message)
@@ -239,10 +244,8 @@ void xdccd::DCCBot::on_part(const std::string &channel)
 
 void xdccd::DCCBot::on_privmsg(const xdccd::IRCMessage &msg)
 {
-    static std::regex announce("#(\\d{1,3})\\s+(\\d+)x\\s+\\[\\s?(\\d+(?:\\.\\d+)?[KMG])\\] (.*)", std::regex_constants::ECMAScript);
-
     std::smatch m;
-    if (!std::regex_match(msg.params[1], m, announce))
+    if (!std::regex_match(msg.params[1], m, announce_regex))
         return;
 
     if (!m.empty() && m.size() == 5)
