@@ -71,7 +71,7 @@ void xdccd::IRCConnection::on_resolved(const boost::system::error_code& err, boo
         return;
     }
 
-    // Inform the bot about the succesful connection
+    // Inform the bot about the successful connection
     connected_handler();
 
     state = connection::CONNECTED;
@@ -181,8 +181,8 @@ void xdccd::IRCConnection::close()
     timeout_timer.cancel();
     reconnect_timer.cancel();
 
-    socket->close();
-    io_service.stop();
+
+    io_service.post([this]() { socket->close(); io_service.stop(); });
 }
 
 void xdccd::IRCConnection::start_reconnect_timer()
