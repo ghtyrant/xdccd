@@ -3,6 +3,7 @@
 #include <vector>
 #include <unistd.h>
 #include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
 
 #include "api.h"
 #include "logging.h"
@@ -23,7 +24,31 @@ int main(int argc, char* argv[])
 
     std::signal(SIGINT, signal_handler);
 
-    xdccd::Config config;
+
+	namespace po = boost::program_options;
+	po::options_description desc("Options");
+	desc.add_options()
+		("help", "Show this message")
+		("config", po::value<std::string>(), "Path to a config file")
+	;
+
+	po::variables_map vm;
+	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::notify(vm);
+
+	if (vm.count("help"))
+	{
+		std::cout << desc << "\n";
+		return 1;
+	}
+
+	std::string config_path;
+	if (vm.count("config"))
+	{
+		config_path = vm["config"].as<std::string>();
+	}
+
+    xdccd::Config config(config_path);
     config.load();
 
     if (config["download_path"].isNull())
@@ -50,7 +75,8 @@ int main(int argc, char* argv[])
     // Start API
     std::string bind_address = config["api"].get("host", "127.0.0.1").asString();
     int port = config["api"].get("port", 1984).asInt();
-    xdccd::API api(bind_address, port, download_path);
+    bool enable_webinterface = config["api"].get("enable_webinterface", true).asBool();
+    xdccd::API api(bind_address, port, download_path, enable_webinterface);
 
     // Start bots defined in config file
     Json::Value bots = config["bots"];

@@ -1,6 +1,6 @@
 CXX=g++
 CXXFLAGS=-g -O0 -std=c++14 -Wall -Wextra -pedantic -DBOOST_LOG_DYN_LINK
-LDFLAGS=-lboost_filesystem -lboost_system -lboost_thread -lboost_log_setup -lboost_log -lpthread -lssl -lcrypto -lrestbed -ljsoncpp
+LDFLAGS=-lboost_filesystem -lboost_system -lboost_thread -lboost_log_setup -lboost_log -lboost_program_options -lpthread -lssl -lcrypto -lrestbed -ljsoncpp
 
 OBJDIR=obj
 CXXFILES := $(shell find src -mindepth 1 -maxdepth 4 -name "*.cpp")
