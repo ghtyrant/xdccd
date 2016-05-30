@@ -4,6 +4,8 @@
 
 #include "socket.h"
 
+/* Plain Socket */
+
 xdccd::PlainSocket::PlainSocket(boost::asio::io_service &io_service)
     : socket(io_service)
 {}
@@ -42,6 +44,8 @@ bool xdccd::PlainSocket::is_open() const
 {
     return socket.is_open();
 }
+
+/* SSL Socket */
 
 xdccd::SSLSocket::SSLSocket(boost::asio::io_service &io_service)
     : ssl_context(boost::asio::ssl::context::sslv23), socket(io_service, ssl_context)
