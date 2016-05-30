@@ -15,8 +15,13 @@ using namespace std::chrono_literals;
 
 bool xdccd::API::quit = false;
 
-xdccd::API::API(const std::string &bind_address, int port, const boost::filesystem::path &download_path)
-    : bind_address(bind_address), port(port), download_path(download_path), bot_manager(thread_manager, 10), download_manager(thread_manager, download_path)
+xdccd::API::API(const std::string &bind_address, int port, const boost::filesystem::path &download_path, bool enable_webinterface)
+    : bind_address(bind_address),
+	port(port),
+	download_path(download_path),
+	bot_manager(thread_manager, 10),
+	download_manager(thread_manager, download_path),
+	enable_webinterface(enable_webinterface)
 {
 }
 
@@ -90,6 +95,31 @@ void xdccd::API::status_handler(std::shared_ptr<restbed::Session> session)
         child["host"] = bot->get_host() + ":" + bot->get_port();
         child["announces"] = static_cast<Json::UInt64>(bot->get_announces().size());
         child["total_size"] = static_cast<Json::UInt64>(bot->get_total_announces_size());
+
+        Json::Value request_list(Json::ValueType::arrayValue);
+        auto &requests = bot->get_requests();
+        decltype(requests.equal_range("")) range;
+
+        for (auto i = requests.begin(); i != requests.end(); i = range.second)
+        {
+            range = requests.equal_range(i->first);
+
+			Json::Value request;
+			for (auto d = range.first; d != range.second; ++d)
+			{
+				request["nick"] = d->second->nick;
+				request["slot"] = d->second->slot;
+
+				if (d->second->announce)
+				{
+					request["filename"] = d->second->announce->filename;
+				}
+			}
+
+			request_list.append(request);
+        }
+
+		child["requests"] = request_list;
 
         for (auto channel_name : bot->get_channels())
         {
@@ -345,14 +375,8 @@ void xdccd::API::run()
     settings->set_default_header("Access-Control-Allow-Headers", "Content-Type");
     settings->set_default_header("Connection", "close");
 
-    // Static Files
-    auto resource = std::make_shared<restbed::Resource>();
-    resource->set_paths({ "/{filename: [a-z]*\\.html}", "/js/{filename: [a-z]*\\.js}", "/css/{filename: [a-z]*\\.css}", "/img/{filename: [a-z]*\\.gif}" });
-    resource->set_method_handler("GET", std::bind(&API::static_file_handler, this, std::placeholders::_1));
-    service.publish(resource);
-
     // Status
-    resource = std::make_shared<restbed::Resource>();
+    auto resource = std::make_shared<restbed::Resource>();
     resource->set_path("/status");
     resource->set_method_handler("GET", { { "Content-Type", "application/json" } }, std::bind(&API::status_handler, this, std::placeholders::_1));
     service.publish(resource);
@@ -395,6 +419,17 @@ void xdccd::API::run()
     resource->set_path("/shutdown");
     resource->set_method_handler("GET", std::bind(&API::shutdown_handler, this, std::placeholders::_1));
     service.publish(resource);
+
+	// Only serve static files if the webinterface is enabled
+    if (enable_webinterface)
+    {
+        // Static Files
+        resource = std::make_shared<restbed::Resource>();
+        resource->set_paths({ "/{filename: [a-z]*\\.html}", "/js/{filename: [a-z]*\\.js}", "/css/{filename: [a-z]*\\.css}", "/img/{filename: [a-z]*\\.gif}" });
+        resource->set_method_handler("GET", std::bind(&API::static_file_handler, this, std::placeholders::_1));
+        service.publish(resource);
+    }
+
 
     BOOST_LOG_TRIVIAL(info) << "Starting up REST API on http://" << bind_address << ":" << port << " ...";
 

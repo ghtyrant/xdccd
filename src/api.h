@@ -16,7 +16,7 @@ class API
     public:
         static bool quit;
 
-        API(const std::string &bind_address, int port, const boost::filesystem::path &download_path);
+        API(const std::string &bind_address, int port, const boost::filesystem::path &download_path, bool enable_webinterface);
         ~API();
         void run();
         void stop();
@@ -40,6 +40,7 @@ class API
         std::string bind_address;
         int port;
         boost::filesystem::path download_path;
+        bool enable_webinterface;
         restbed::Service service;
 
         ThreadManager thread_manager;
