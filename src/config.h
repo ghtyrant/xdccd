@@ -22,7 +22,7 @@ class Config
     private:
         static boost::filesystem::path find_config();
         boost::filesystem::path path;
-		Json::Value config;
+        Json::Value config;
 };
 
 }

@@ -6,13 +6,15 @@
 #include "logging.h"
 
 xdccd::Config::Config()
-    : Config(xdccd::Config::Config::find_config())
+    : Config(xdccd::Config::find_config())
 {
 }
 
 xdccd::Config::Config(const std::string &path)
     : Config(boost::filesystem::path(path))
 {
+    if (path.empty())
+        this->path = xdccd::Config::find_config();
 }
 
 xdccd::Config::Config(const boost::filesystem::path &path)
