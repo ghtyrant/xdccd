@@ -24,6 +24,9 @@ helgrind: all
 callgrind: all
 	valgrind --tool=callgrind ./$(TARGET)
 
+gdb: all
+	gdb ./$(TARGET)
+
 ## Utility
 clean:
 	@rm -f $(TARGET)
